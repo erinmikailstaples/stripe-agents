@@ -1,0 +1,32 @@
+{
+  "name": "stripe-galileo-agent",
+  "version": "1.0.0",
+  "description": "A TypeScript agent using Stripe Agent Toolkit with Galileo monitoring",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest"
+  },
+  "keywords": ["stripe", "agent", "galileo", "typescript", "ai"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@stripe/agent-toolkit": "^1.0.0",
+    "langchain": "^0.3.0",
+    "langchain-openai": "^0.3.0",
+    "@langchain/core": "^0.3.0",
+    "openai": "^4.0.0",
+    "galileo-sdk": "^1.0.0",
+    "dotenv": "^16.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0",
+    "@types/jest": "^29.0.0",
+    "jest": "^29.0.0"
+  }
+}
