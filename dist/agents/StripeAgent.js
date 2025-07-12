@@ -14,7 +14,7 @@ class StripeAgent {
     conversationHistory = [];
     galileoLogger;
     constructor() {
-        this.galileoLogger = new GalileoLogger_1.GalileoLogger();
+        this.galileoLogger = new GalileoLogger_1.GalileoAgentLogger();
         this.initializeStripeToolkit();
         this.initializeLLM();
         this.initializeAgent();
@@ -58,16 +58,19 @@ class StripeAgent {
         const tools = this.stripeToolkit.getTools();
         const prompt = prompts_1.ChatPromptTemplate.fromMessages([
             ['system', `You are ${environment_1.env.agent.name}, ${environment_1.env.agent.description}.
-    You help users with Stripe payment operations including:
-    - Creating payment links for products
-    - Managing customers
-    - Creating and managing products and prices
-    - Handling invoices
-    
-    Always be helpful, accurate, and secure when handling payment information.
-    If you're unsure about something, ask for clarification rather than making assumptions.
-    
-    When creating payment links or handling money amounts, always confirm the details with the user first.`],
+You have access to the following tools: {tool_names}
+{tools}
+
+You help users with Stripe payment operations including:
+- Creating payment links for products
+- Managing customers
+- Creating and managing products and prices
+- Handling invoices
+
+Always be helpful, accurate, and secure when handling payment information.
+If you're unsure about something, ask for clarification rather than making assumptions.
+
+When creating payment links or handling money amounts, always confirm the details with the user first.`],
             ['human', '{input}'],
             new prompts_1.MessagesPlaceholder('agent_scratchpad'),
         ]);
@@ -97,6 +100,7 @@ class StripeAgent {
             // Process the message with the agent
             const result = await this.agentExecutor.invoke({
                 input: userMessage,
+                agent_scratchpad: [],
             });
             // Add assistant response to conversation history
             this.conversationHistory.push({

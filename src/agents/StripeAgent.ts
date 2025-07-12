@@ -3,7 +3,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { AgentExecutor, createStructuredChatAgent } from 'langchain/agents';
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import { env } from '../config/environment';
-import { GalileoLogger } from '../utils/GalileoLogger';
+import { GalileoAgentLogger } from '../utils/GalileoLogger';
 import { 
   AgentMessage, 
   AgentResponse, 
@@ -18,10 +18,10 @@ export class StripeAgent {
   private llm!: ChatOpenAI;
   private agentExecutor!: AgentExecutor;
   private conversationHistory: AgentMessage[] = [];
-  private galileoLogger: GalileoLogger;
+  private galileoLogger: GalileoAgentLogger;
 
   constructor() {
-    this.galileoLogger = new GalileoLogger();
+    this.galileoLogger = new GalileoAgentLogger();
     this.initializeStripeToolkit();
     this.initializeLLM();
     this.initializeAgent();
@@ -69,16 +69,19 @@ export class StripeAgent {
     
     const prompt = ChatPromptTemplate.fromMessages([
       ['system', `You are ${env.agent.name}, ${env.agent.description}.
-    You help users with Stripe payment operations including:
-    - Creating payment links for products
-    - Managing customers
-    - Creating and managing products and prices
-    - Handling invoices
-    
-    Always be helpful, accurate, and secure when handling payment information.
-    If you're unsure about something, ask for clarification rather than making assumptions.
-    
-    When creating payment links or handling money amounts, always confirm the details with the user first.`],
+You have access to the following tools: {tool_names}
+{tools}
+
+You help users with Stripe payment operations including:
+- Creating payment links for products
+- Managing customers
+- Creating and managing products and prices
+- Handling invoices
+
+Always be helpful, accurate, and secure when handling payment information.
+If you're unsure about something, ask for clarification rather than making assumptions.
+
+When creating payment links or handling money amounts, always confirm the details with the user first.`],
       ['human', '{input}'],
       new MessagesPlaceholder('agent_scratchpad'),
     ]);
@@ -113,6 +116,7 @@ export class StripeAgent {
       // Process the message with the agent
       const result = await this.agentExecutor.invoke({
         input: userMessage,
+        agent_scratchpad: [],
       });
 
       // Add assistant response to conversation history

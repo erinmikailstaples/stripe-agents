@@ -26,7 +26,7 @@ function validateEnvironment(): EnvironmentConfig {
     'STRIPE_SECRET_KEY',
     'OPENAI_API_KEY',
     'GALILEO_API_KEY',
-    'GALILEO_PROJECT_NAME',
+    'GALILEO_PROJECT',
     'GALILEO_LOG_STREAM',
     'AGENT_NAME',
     'AGENT_DESCRIPTION'
@@ -47,7 +47,7 @@ function validateEnvironment(): EnvironmentConfig {
     },
     galileo: {
       apiKey: process.env.GALILEO_API_KEY!,
-      projectName: process.env.GALILEO_PROJECT_NAME!,
+      projectName: process.env.GALILEO_PROJECT!,
       logStream: process.env.GALILEO_LOG_STREAM!,
     },
     agent: {

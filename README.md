@@ -47,7 +47,7 @@ Before you begin, ensure you have:
    
    # Galileo Configuration
    GALILEO_API_KEY=your_galileo_api_key_here
-   GALILEO_PROJECT_NAME=stripe-agent-demo
+   GALILEO_PROJECT=stripe-agent-demo
    GALILEO_LOG_STREAM=production
    
    # Agent Configuration

@@ -1,5 +1,5 @@
 import { StripeAgent } from './agents/StripeAgent';
-import { GalileoLogger } from './utils/GalileoLogger';
+import { GalileoAgentLogger } from './utils/GalileoLogger';
 import { env } from './config/environment';
 
 async function main() {
@@ -11,7 +11,7 @@ async function main() {
   try {
     // Initialize the agent
     const agent = new StripeAgent();
-    const galileoLogger = new GalileoLogger();
+    const galileoLogger = new GalileoAgentLogger();
 
     // Example interactions
     const examples = [
@@ -72,7 +72,8 @@ async function main() {
     console.log('\n📈 Generating evaluation report...');
     // In a real scenario, you would collect logs over time
     // For demo purposes, we'll create a sample report
-    await generateSampleReport(galileoLogger);
+    // TODO: Implement evaluation reporting if needed. The previous methods (generateEvaluationReport, evaluateToolSelection, evaluateContextAdherence)
+    // are not part of GalileoAgentLogger. If you need these, implement them here or in a separate utility.
 
     console.log('\n✨ Demo completed successfully!');
     console.log('\n📋 Next Steps:');
@@ -86,58 +87,6 @@ async function main() {
     console.error('💥 Fatal error:', error);
     process.exit(1);
   }
-}
-
-async function generateSampleReport(galileoLogger: GalileoLogger): Promise<void> {
-  // Sample evaluation data for demonstration
-  const sampleLogs = [
-    {
-      projectName: env.galileo.projectName,
-      logStream: env.galileo.logStream,
-      timestamp: new Date(),
-      executionTime: 1200,
-      success: true,
-      toolsUsed: ['create_payment_link', 'create_product'],
-      input: 'Create a payment link for a course',
-      output: 'Payment link created successfully',
-    },
-    {
-      projectName: env.galileo.projectName,
-      logStream: env.galileo.logStream,
-      timestamp: new Date(),
-      executionTime: 800,
-      success: true,
-      toolsUsed: ['create_customer'],
-      input: 'Create a customer',
-      output: 'Customer created successfully',
-    },
-    {
-      projectName: env.galileo.projectName,
-      logStream: env.galileo.logStream,
-      timestamp: new Date(),
-      executionTime: 2000,
-      success: false,
-      toolsUsed: ['list_products'],
-      errorType: 'AuthenticationError',
-      input: 'List products',
-      output: 'Authentication failed',
-    }
-  ];
-
-  await galileoLogger.generateEvaluationReport(sampleLogs);
-
-  // Example evaluations
-  await galileoLogger.evaluateToolSelection(
-    ['create_payment_link', 'create_product'],
-    ['create_payment_link', 'create_product', 'create_price'],
-    'User wants to create a payment link for a product'
-  );
-
-  await galileoLogger.evaluateContextAdherence(
-    'I created a payment link for your TypeScript course with the specified price',
-    'User requested a payment link for a TypeScript course priced at $99',
-    'Create a payment link for TypeScript course'
-  );
 }
 
 // Handle graceful shutdown
