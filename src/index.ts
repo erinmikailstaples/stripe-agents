@@ -17,23 +17,23 @@ async function main() {
     const sessionId = await galileoLogger.startSession('Stripe Agent Demo Session');
     console.log(`📊 Started Galileo session: ${sessionId}`);
 
-    // Example interactions
+    // Example interactions for Galileo's Gizmos - Space-themed store
     const examples = [
       {
-        description: "Create a payment link for a digital product",
-        message: "Create a payment link for a digital course called 'TypeScript Mastery' priced at $99 USD"
+        description: "Create a payment link for a space gadget",
+        message: "Hi! I'd like to create a payment link for our new 'Quantum Telescope Kit' - it's our premium stargazing package for $299.99 USD. Thanks!"
       },
       {
-        description: "Create a customer record", 
-        message: "Create a new customer with email john.doe@example.com and name John Doe"
+        description: "Create a customer record for an astronaut", 
+        message: "Please add a new customer to our system: Commander Sally Nebula, email sally.nebula@spacecorp.com"
       },
       {
-        description: "List existing products",
-        message: "Show me all the products in my Stripe account"
+        description: "List our space-themed products",
+        message: "Can you show me what cool space products we have available in Galileo's Gizmos?"
       },
       {
-        description: "Create a subscription product",
-        message: "Create a monthly subscription product called 'Premium Plan' for $29.99 USD"
+        description: "Create a monthly space subscription box",
+        message: "I want to set up our 'Cosmic Explorer Monthly Box' subscription service for $42.99 per month - it includes space snacks, astronaut gear, and stellar surprises!"
       }
     ];
 

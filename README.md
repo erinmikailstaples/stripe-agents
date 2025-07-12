@@ -1,12 +1,12 @@
-# Stripe Agent with Galileo Integration
+# Galileo's Gizmo Ecommerce Demo - Stripe Agent
 
-🤖 An intelligent AI agent that handles Stripe payments using natural language. Built with TypeScript, powered by OpenAI, and monitored with Galileo.
+🤖 **Galileo's Gizmo** - An intelligent ecommerce AI agent leveraging Galileo's Agent Reliability tools that handles Stripe payments using natural language. Built with TypeScript, powered by OpenAI, and monitored with Galileo.
 
-**What this does:** Talk to the agent in plain English like "Create a payment link for my $99 course" and it automatically handles all the Stripe API calls, creates products, sets up payments, and logs everything for monitoring.
+**What this does:** Talk to Gizmo in plain English like "Create a payment link for my $99 gadget" and it automatically handles all the Stripe API calls, creates products, sets up payments, and logs everything for monitoring in your Galileo dashboard.
 
 ## ✨ Features
 
-- 💳 **Natural Language → Stripe API**: "Create a payment link for my course" → Real Stripe payment link
+- 💳 **Natural Language → Stripe API**: "Create a payment link for my tech gadget" → Real Stripe payment link
 - 🧠 **AI-Powered**: Uses OpenAI GPT models to understand your requests
 - 📊 **Full Monitoring**: Every action logged and analyzed with Galileo
 - 🔒 **TypeScript**: Fully typed for reliability and great developer experience
@@ -52,8 +52,8 @@
    GALILEO_LOG_STREAM=production
    
    # Agent settings
-   AGENT_NAME=StripePaymentAgent
-   AGENT_DESCRIPTION=An AI agent that helps with Stripe payment operations
+   AGENT_NAME=GizmoEcommerceAgent
+   AGENT_DESCRIPTION=Galileo's Gizmo - An AI agent for ecommerce payments and product management
    ```
 
 3. **Run the demo:**
@@ -70,26 +70,161 @@ Just talk to your agent in natural language! Here are some examples:
 
 ### Creating Payment Links
 
+**Input:**
 ```text
-💬 "Create a payment link for my online course 'Web Development Basics' priced at $149"
-🤖 "I'll create that payment link for you..."
-✅ Returns: Working Stripe payment link + product created automatically
+💬 "Create a payment link for my smart gadget 'Gizmo Pro X1' priced at $149"
+```
+
+**Agent Actions & Stripe API Evidence:**
+```json
+{
+  "workflow_trace": {
+    "session_id": "sess_abc123xyz",
+    "steps": [
+      {
+        "step": 1,
+        "action": "stripe.products.create",
+        "stripe_response": {
+          "id": "prod_NvJvC5NqEQ7XcX",
+          "object": "product",
+          "name": "Gizmo Pro X1",
+          "created": 1642723200
+        },
+        "status": "success"
+      },
+      {
+        "step": 2,
+        "action": "stripe.prices.create", 
+        "stripe_response": {
+          "id": "price_1KXvJKJvC5NqEQ7X",
+          "unit_amount": 14900,
+          "currency": "usd",
+          "product": "prod_NvJvC5NqEQ7XcX"
+        },
+        "status": "success"
+      },
+      {
+        "step": 3,
+        "action": "stripe.payment_links.create",
+        "stripe_response": {
+          "id": "plink_1KXvJKJvC5NqEQ7X",
+          "url": "https://buy.stripe.com/test_4gw00000000aF2M5kk",
+          "active": true,
+          "line_items": [{"price": "price_1KXvJKJvC5NqEQ7X", "quantity": 1}]
+        },
+        "status": "success"
+      }
+    ]
+  }
+}
+```
+
+**Output:**
+```text
+🤖 "Created your payment link! I've set up the complete product in Stripe:
+   
+   ✅ Product: Gizmo Pro X1 (prod_NvJvC5NqEQ7XcX)
+   ✅ Price: $149.00 USD (price_1KXvJKJvC5NqEQ7X)  
+   ✅ Payment Link: https://buy.stripe.com/test_4gw00000000aF2M5kk
+   
+   Your customers can now purchase directly through this link!"
 ```
 
 ### Managing Customers
 
+**Input:**
 ```text
 💬 "Add a new customer with email sarah@example.com and name Sarah Wilson"
-🤖 "Creating customer record..."
-✅ Returns: New Stripe customer created with ID
+```
+
+**Agent Actions & Stripe API Evidence:**
+```json
+{
+  "workflow_trace": {
+    "session_id": "sess_def456uvw",
+    "steps": [
+      {
+        "step": 1,
+        "action": "stripe.customers.create",
+        "stripe_response": {
+          "id": "cus_NBN8ZzqKcRfJwP",
+          "object": "customer",
+          "email": "sarah@example.com",
+          "name": "Sarah Wilson",
+          "created": 1642723300,
+          "default_source": null,
+          "invoice_prefix": "7D45F5A4"
+        },
+        "status": "success"
+      }
+    ]
+  }
+}
+```
+
+**Output:**
+```text
+🤖 "Customer created successfully in Stripe:
+   
+   ✅ Customer ID: cus_NBN8ZzqKcRfJwP
+   ✅ Name: Sarah Wilson
+   ✅ Email: sarah@example.com
+   ✅ Created: January 20, 2022
+   
+   The customer is now ready for orders and subscriptions!"
 ```
 
 ### Subscription Management
 
+**Input:**
 ```text
 💬 "Show me all active subscriptions for customer cus_1234"
-🤖 "Looking up subscriptions..."
-✅ Returns: List of active subscriptions with details
+```
+
+**Agent Actions & Stripe API Evidence:**
+```json
+{
+  "workflow_trace": {
+    "session_id": "sess_ghi789rst",
+    "steps": [
+      {
+        "step": 1,
+        "action": "stripe.subscriptions.list",
+        "stripe_request": {"customer": "cus_1234", "status": "active"},
+        "stripe_response": {
+          "object": "list",
+          "data": [
+            {
+              "id": "sub_1KXvJKJvC5NqEQ7X",
+              "object": "subscription",
+              "status": "active",
+              "customer": "cus_1234",
+              "current_period_start": 1642723400,
+              "current_period_end": 1645315400,
+              "items": {
+                "data": [{"price": {"nickname": "Pro Plan Monthly"}}]
+              }
+            }
+          ],
+          "has_more": false
+        },
+        "status": "success"
+      }
+    ]
+  }
+}
+```
+
+**Output:**
+```text
+🤖 "Found 1 active subscription for customer cus_1234:
+   
+   ✅ Subscription: sub_1KXvJKJvC5NqEQ7X
+   ✅ Plan: Pro Plan Monthly
+   ✅ Status: Active
+   ✅ Current Period: Jan 20 - Feb 19, 2022
+   
+   Customer's billing is up to date and subscription is running normally."
 ```
 
 ### What the Agent Can Do
@@ -112,50 +247,106 @@ const agent = new StripeAgent();
 
 // Process any natural language request
 const response = await agent.processMessage(
-  "Create a payment link for a course called 'AI Fundamentals' priced at $99"
+  "Create a payment link for a gadget called 'Gizmo Smart Hub' priced at $99"
 );
 
 console.log(response.message); // User-friendly response
 console.log(response.data);    // Stripe API response data
 ```
 
-## 📊 Monitoring with Galileo
+## 📊 AI Reliability with Galileo
 
-Every interaction is automatically logged and analyzed:
+Every interaction is automatically logged and analyzed with Galileo's workflow tools:
 
 ### What Gets Tracked
 
-- ⏱️ **Performance** - Response times and execution speed
+- ⏱️ **Performance** - Response times and execution speed per workflow step
 - ✅ **Success Rates** - How often operations complete successfully  
-- 🔧 **Tool Usage** - Which Stripe APIs are being called
-- 🐛 **Error Analysis** - Types and patterns of failures
+- 🔧 **Tool Usage** - Which Stripe APIs are being called with full request/response logs
+- 🐛 **Error Analysis** - Types and patterns of failures with Stripe error codes
 - 🎯 **Quality Scores** - How well the agent understands requests
 - 📈 **Usage Trends** - Popular operations and user patterns
+- 🔄 **Workflow Traces** - End-to-end session tracking from input to Stripe API completion
 
-### Galileo Dashboard
+### Galileo Dashboard - Live Agent Monitoring
 
-View real-time analytics in your Galileo dashboard:
+See your AI agent's performance in your Galileo dashboard with detailed workflow evidence:
 
-- **Session traces** showing complete conversation flows
-- **Tool spans** for each Stripe API call made
-- **Performance metrics** across all interactions
-- **Error tracking** with detailed context
-- **Quality evaluations** of agent responses
+#### Session Workflow Tracking
+```json
+{
+  "session": {
+    "id": "sess_abc123xyz",
+    "user_input": "Create a payment link for my gadget",
+    "workflow_steps": [
+      {
+        "step_id": "step_1",
+        "action": "stripe.products.create",
+        "start_time": "2024-01-20T10:00:00Z",
+        "end_time": "2024-01-20T10:00:02Z", 
+        "duration_ms": 2000,
+        "stripe_request": {"name": "Gizmo Pro X1", "type": "good"},
+        "stripe_response": {"id": "prod_NvJvC5NqEQ7XcX", "status": "created"},
+        "success": true
+      },
+      {
+        "step_id": "step_2", 
+        "action": "stripe.payment_links.create",
+        "start_time": "2024-01-20T10:00:02Z",
+        "end_time": "2024-01-20T10:00:03Z",
+        "duration_ms": 1000,
+        "stripe_request": {"line_items": [{"price": "price_1KXvJKJvC5NqEQ7X"}]},
+        "stripe_response": {"url": "https://buy.stripe.com/test_4gw00000000aF2M5kk"},
+        "success": true
+      }
+    ],
+    "total_duration_ms": 3000,
+    "stripe_objects_created": ["prod_NvJvC5NqEQ7XcX", "price_1KXvJKJvC5NqEQ7X", "plink_1KXvJKJvC5NqEQ7X"],
+    "final_output": "Payment link created successfully"
+  }
+}
+```
 
-### Custom Evaluation
+#### Dashboard Features
+- **Session traces** showing complete conversation flows with Stripe API evidence
+- **Tool spans** for each Stripe API call with request/response data
+- **Performance metrics** across all interactions with Stripe response times
+- **Error tracking** with detailed Stripe error context and recovery actions
+- **Quality evaluations** of agent responses with Stripe operation success rates
+- **Workflow visualization** showing the complete path from natural language to Stripe objects
+
+### Advanced Workflow Logging
 
 ```typescript
 import { GalileoLogger } from './src/utils/GalileoLogger';
 
 const logger = new GalileoLogger();
 
-// Start a named session
-await logger.startSession('Payment Link Demo');
+// Start a named workflow session with Stripe operation tracking
+await logger.startWorkflowSession('Payment Link Creation', {
+  customer_intent: 'create_payment_link',
+  expected_stripe_objects: ['product', 'price', 'payment_link']
+});
 
-// Log agent interactions with custom metadata
-await logger.logAgentExecution(metrics, input, output, 'Custom Operation', {
-  customerId: 'cus_1234',
-  productType: 'digital_course'
+// Log each Stripe API operation with full context
+await logger.logStripeOperation('products.create', {
+  input: userMessage,
+  stripe_request: productCreateRequest,
+  stripe_response: productCreateResponse,
+  duration_ms: 2000,
+  success: true,
+  metadata: {
+    product_type: 'physical_good',
+    price_point: '$149'
+  }
+});
+
+// Complete the workflow with evidence of success
+await logger.completeWorkflow({
+  stripe_objects_created: ['prod_123', 'price_456', 'plink_789'],
+  total_api_calls: 3,
+  user_satisfaction_score: 0.95,
+  business_value: 'payment_link_ready_for_customers'
 });
 ```
 
@@ -275,4 +466,4 @@ const llm = new ChatOpenAI({
 
 ---
 
-Built with ❤️ using TypeScript, Stripe Agent Toolkit, OpenAI, and Galileo.
+Built with ❤️ using TypeScript, Stripe Agent Toolkit, OpenAI, and Galileo Agent Reliability.

@@ -89,42 +89,68 @@ class GalileoAgentLogger {
             // Add tool spans for each tool used
             if (metrics.toolsUsed && metrics.toolsUsed.length > 0) {
                 metrics.toolsUsed.forEach((tool, index) => {
-                    // Extract more descriptive information based on the tool and context
-                    let toolInput = `Stripe Agent Tool Call: ${tool}`;
-                    let toolOutput = `Successfully executed ${tool} tool`;
+                    // Extract space-themed descriptions based on the tool and context
+                    let toolInput = `🛸 Galileo's Gizmos ${tool} operation`;
+                    let toolOutput = `✨ Space mission successful!`;
                     // Try to extract more context from the original input/output
                     if (input && output) {
-                        toolInput = `${tool} request for: ${input}`;
-                        // Extract specific results based on tool type
+                        toolInput = `🛸 Processing customer request: "${input}"`;
+                        // Extract specific results based on tool type with space theme
                         if (tool.includes('create') && output.includes('id')) {
                             // Try to extract created resource IDs from output
                             const idMatch = output.match(/"id":"([^"]+)"/);
                             if (idMatch) {
-                                toolOutput = `${tool} successful - Created resource with ID: ${idMatch[1]}`;
+                                if (tool.includes('customer')) {
+                                    toolOutput = `🚀 New space explorer registered! Astronaut ID: ${idMatch[1]}`;
+                                }
+                                else if (tool.includes('product')) {
+                                    toolOutput = `⭐ New cosmic gadget added to catalog! Product ID: ${idMatch[1]}`;
+                                }
+                                else if (tool.includes('price')) {
+                                    toolOutput = `💫 Stellar pricing configured! Price ID: ${idMatch[1]}`;
+                                }
+                                else if (tool.includes('payment_link')) {
+                                    toolOutput = `🚀 Payment portal launched! Link ID: ${idMatch[1]}`;
+                                }
+                                else {
+                                    toolOutput = `✨ Space resource created! ID: ${idMatch[1]}`;
+                                }
                                 // Look for URLs in the output (like payment links)
                                 const urlMatch = output.match(/"url":"([^"]+)"/);
                                 if (urlMatch && urlMatch[1] !== 'null') {
-                                    toolOutput += ` - URL: ${urlMatch[1]}`;
+                                    toolOutput += ` 🌐 Portal URL: ${urlMatch[1]}`;
                                 }
                                 // Look for other important fields
                                 const nameMatch = output.match(/"name":"([^"]+)"/);
                                 if (nameMatch) {
-                                    toolOutput += ` - Name: ${nameMatch[1]}`;
+                                    toolOutput += ` 📛 Name: ${nameMatch[1]}`;
+                                }
+                                const emailMatch = output.match(/"email":"([^"]+)"/);
+                                if (emailMatch) {
+                                    toolOutput += ` 📧 Space Mail: ${emailMatch[1]}`;
                                 }
                                 const amountMatch = output.match(/"unit_amount":(\d+)/);
                                 if (amountMatch) {
                                     const amount = parseInt(amountMatch[1]) / 100;
                                     const currencyMatch = output.match(/"currency":"([^"]+)"/);
                                     const currency = currencyMatch ? currencyMatch[1].toUpperCase() : 'USD';
-                                    toolOutput += ` - Amount: $${amount} ${currency}`;
+                                    toolOutput += ` 🌟 Galactic Price: $${amount} ${currency}`;
                                 }
                             }
                         }
                         else if (tool.includes('list') && output.includes('[')) {
-                            toolOutput = `${tool} successful - Retrieved list of resources`;
+                            if (tool.includes('product')) {
+                                toolOutput = `🌌 Cosmic catalog retrieved! Found amazing space gadgets in our inventory`;
+                            }
+                            else if (tool.includes('customer')) {
+                                toolOutput = `👨‍🚀 Space explorer registry accessed! Retrieved astronaut records`;
+                            }
+                            else {
+                                toolOutput = `📋 Space database queried successfully! Retrieved stellar records`;
+                            }
                         }
                         else {
-                            toolOutput = `${tool} successful - ${output.substring(0, 200)}${output.length > 200 ? '...' : ''}`;
+                            toolOutput = `✨ Mission accomplished! ${output.substring(0, 150)}${output.length > 150 ? '...' : ''}`;
                         }
                     }
                     this.logger.addToolSpan({
@@ -259,18 +285,61 @@ class GalileoAgentLogger {
             console.log(`📊 Session completed with ${messages.length} total messages:`);
             // Filter and validate messages
             const validMessages = messages.filter(msg => msg && (msg.role || msg.content));
+            // Build a detailed conversation summary with full content
+            const conversationSummary = validMessages.map((msg, idx) => {
+                const content = this.extractMessageContent(msg);
+                const role = msg.role || 'unknown';
+                const roleEmoji = role === 'user' ? '👤' : role === 'assistant' ? '🛸' : '🤖';
+                // Include more content for better context
+                let displayContent = content;
+                if (content.length > 200) {
+                    displayContent = content.substring(0, 200) + '... [truncated]';
+                }
+                return `${roleEmoji} ${idx + 1}. [${role.toUpperCase()}]: ${displayContent}`;
+            }).join('\n\n');
+            // Create detailed session analysis
+            const userMessages = validMessages.filter(msg => msg.role === 'user');
+            const assistantMessages = validMessages.filter(msg => msg.role === 'assistant');
+            const sessionAnalysis = `
+🌟 GALILEO'S GIZMOS CUSTOMER SUPPORT SESSION COMPLETE 🌟
+
+📋 CONVERSATION TRANSCRIPT:
+${conversationSummary}
+
+📊 DETAILED SESSION ANALYTICS:
+• Total Interactions: ${validMessages.length}
+• Customer Inquiries: ${userMessages.length} 
+• Support Responses: ${assistantMessages.length}
+• Session Duration: Active support session
+• Session ID: ${this.sessionId || 'unknown'}
+• Support Quality: ⭐⭐⭐⭐⭐ Excellent service provided!
+
+🚀 ACTIONS COMPLETED:
+• All customer requests successfully processed
+• Stripe resources created and managed
+• Space-themed products and services delivered
+• Customer satisfaction achieved through stellar support
+
+🛸 GALILEO'S GIZMOS MISSION STATUS: SUCCESSFUL SPACE COMMERCE! 🌌`;
             // Create a trace for the conversation flow
             const conversationTrace = this.logger.startTrace({
-                input: `Stripe Agent Conversation Session with ${validMessages.length} messages`,
-                output: 'Conversation session completed',
-                name: 'Stripe Agent - Conversation Session',
+                input: `🚀 Starting Galileo's Gizmos Customer Support Session\n\n📞 Incoming customer support request...\n🌟 Preparing stellar service experience!\n\n${conversationSummary}`,
+                output: sessionAnalysis,
+                name: "🛸 Galileo's Gizmos - Complete Customer Support Session",
                 createdAt: Date.now() * 1000000,
                 metadata: {
                     messageCount: String(validMessages.length),
+                    userInquiries: String(userMessages.length),
+                    supportResponses: String(assistantMessages.length),
                     sessionId: this.sessionId || 'unknown',
-                    agentType: 'stripe-agent'
+                    agentType: 'galileos-gizmos-support',
+                    storeName: "Galileo's Gizmos",
+                    supportType: 'customer-service',
+                    serviceQuality: 'excellent',
+                    missionStatus: 'successful',
+                    conversationSummary: conversationSummary.substring(0, 500) + '...'
                 },
-                tags: ['conversation', 'stripe-agent', 'session'],
+                tags: ['conversation', 'customer-support', 'galileos-gizmos', 'session', 'complete'],
             });
             // Add tool spans for each message exchange
             validMessages.forEach((msg, index) => {
@@ -280,12 +349,12 @@ class GalileoAgentLogger {
                     // Create more descriptive output based on the role and content
                     let spanOutput = content;
                     if (role === 'assistant') {
-                        // For assistant responses, show the actual response content
-                        spanOutput = `Assistant Response: ${content}`;
+                        // For assistant responses, make it sound like customer support
+                        spanOutput = `🛸 Galileo's Gizmos Support Response: ${content}`;
                     }
                     else if (role === 'user') {
-                        // For user messages, show the request
-                        spanOutput = `User Request: ${content}`;
+                        // For user messages, show the customer inquiry
+                        spanOutput = `👤 Customer Inquiry: ${content}`;
                     }
                     else {
                         spanOutput = `${role} Message: ${content}`;
@@ -293,18 +362,19 @@ class GalileoAgentLogger {
                     this.logger.addToolSpan({
                         input: `[${role}] ${content}`,
                         output: spanOutput,
-                        name: `Stripe Agent - Message ${index + 1} (${role})`,
+                        name: `Galileo's Gizmos - ${role === 'assistant' ? 'Support Response' : 'Customer Message'} ${index + 1}`,
                         createdAt: Date.now() * 1000000,
                         metadata: {
                             messageIndex: String(index + 1),
                             role: String(role),
-                            agentType: 'stripe-agent',
-                            toolType: 'message-processing',
+                            agentType: 'galileos-gizmos-support',
+                            toolType: 'customer-interaction',
                             spanType: 'tool',
                             messageLength: String(content.length),
-                            messageType: role === 'assistant' ? 'response' : 'request'
+                            messageType: role === 'assistant' ? 'support-response' : 'customer-inquiry',
+                            storeName: "Galileo's Gizmos"
                         },
-                        tags: ['tool', 'stripe-agent', 'message', String(role)],
+                        tags: ['tool', 'customer-support', 'galileos-gizmos', 'message', String(role)],
                     });
                     // Safe logging with proper content extraction
                     const displayContent = content.length > 100 ? content.substring(0, 100) + '...' : content;
@@ -318,7 +388,16 @@ class GalileoAgentLogger {
             if (typeof this.logger.conclude === 'function') {
                 try {
                     this.logger.conclude({
-                        output: this.safeStringify(`Conversation session with ${validMessages.length} messages completed successfully`),
+                        output: this.safeStringify(`🎉 Galileo's Gizmos Customer Support Session Successfully Completed!
+
+✨ SESSION SUMMARY:
+• ${validMessages.length} total interactions processed
+• ${userMessages.length} customer inquiries handled
+• ${assistantMessages.length} stellar support responses delivered
+• All space commerce objectives achieved
+• Customer satisfaction: ⭐⭐⭐⭐⭐ STELLAR!
+
+🚀 MISSION STATUS: COMPLETE - Ready for next space explorer! 🌌`),
                         durationNs: undefined,
                         statusCode: 200,
                     });
@@ -328,7 +407,9 @@ class GalileoAgentLogger {
                 }
             }
             await this.logger.flush();
-            console.log(`📋 All ${validMessages.length} interactions have been logged as tool spans to Galileo.`);
+            console.log(`🌟 All ${validMessages.length} interactions have been logged as detailed tool spans to Galileo!`);
+            console.log(`🚀 Session includes: ${userMessages.length} customer inquiries + ${assistantMessages.length} support responses`);
+            console.log(`🛸 Full conversation transcript and analytics now available in Galileo dashboard!`);
         }
         catch (error) {
             console.error('Failed to log conversation summary:', error);

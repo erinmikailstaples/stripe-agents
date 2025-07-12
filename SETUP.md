@@ -1,6 +1,6 @@
-# Setup Guide: Stripe Agent with Galileo Integration
+# Setup Guide: Galileo's Gizmo Ecommerce Demo
 
-This guide will walk you through setting up the Stripe Agent with Galileo Agent Reliability step by step. This is designed for beginners - no prior experience with AI agents required!
+This guide will walk you through setting up **Galileo's Gizmo** - an intelligent ecommerce AI agent powered by Galileo Agent Reliability. This is designed for beginners - no prior experience with AI agents required!
 
 ## 🎯 Quick Start (5 minutes)
 
@@ -21,7 +21,7 @@ cd stripe-agents
 npm install
 ```
 
-This installs all required packages including TypeScript, the Stripe Agent Toolkit, and Galileo Agent Reliability tools.
+This installs all required packages including TypeScript, the Stripe Agent Toolkit, and Galileo Agent Reliability tools for the Gizmo ecommerce demo.
 
 ## 🔑 Step 2: Set Up API Keys 
 
@@ -66,8 +66,8 @@ This installs all required packages including TypeScript, the Stripe Agent Toolk
    GALILEO_LOG_STREAM=production
    
    # Agent Configuration
-   AGENT_NAME=StripePaymentAgent
-   AGENT_DESCRIPTION=An AI agent that helps with Stripe payment operations
+   AGENT_NAME=GizmoEcommerceAgent
+   AGENT_DESCRIPTION=Galileo's Gizmo - An AI agent for ecommerce payments and product management
    ```
 
 ## 🏃‍♂️ Step 3: Build and Run the Demo
@@ -87,14 +87,14 @@ This installs all required packages including TypeScript, the Stripe Agent Toolk
    You should see output like this:
 
    ```text
-   🚀 Starting Stripe Agent with Galileo Integration...
+   🚀 Starting Galileo's Gizmo Ecommerce Demo...
    📊 Project: stripe-agent-demo
    📈 Log Stream: production
    ---
    🤖 Running example interactions...
    
    📝 Example 1: Create a payment link for a digital product
-   💬 User: Create a payment link for a digital course called 'TypeScript Mastery' priced at $99 USD
+   💬 User: Create a payment link for a smart gadget called 'Gizmo Pro X1' priced at $99 USD
    ✅ Agent: [Agent response with payment link details]
    ⏱️  Execution time: 1234ms
    🔧 Tools used: create_payment_link, create_product
@@ -102,10 +102,10 @@ This installs all required packages including TypeScript, the Stripe Agent Toolk
 
 ## 🎉 Success! What Just Happened?
 
-Your agent just:
-- ✅ Processed natural language requests
+Your Gizmo agent just:
+- ✅ Processed natural language requests for ecommerce products
 - ✅ Made real Stripe API calls
-- ✅ Created products and payment links
+- ✅ Created gadget products and payment links
 - ✅ Logged everything to Galileo for monitoring
 
 ## 🚀 What's Next?
@@ -115,7 +115,7 @@ Your agent just:
 Talk to your agent using natural language:
 
 ```text
-"Create a payment link for my online course 'Web Development Basics' priced at $149"
+"Create a payment link for my smart gadget 'Gizmo Wireless Charger' priced at $149"
 "Add a new customer with email sarah@example.com"
 "Show me all active subscriptions"
 "Create an invoice for customer cus_1234 with amount $299"

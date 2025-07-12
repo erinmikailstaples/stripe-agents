@@ -144,28 +144,28 @@ class StripeAgent {
         }
     }
     generateTraceName(input) {
-        // Generate meaningful trace names based on user input
+        // Generate space-themed trace names for Galileo's Gizmos
         const lowerInput = input.toLowerCase();
         if (lowerInput.includes('payment link')) {
-            return 'Create Payment Link';
+            return "🚀 Galileo's Gizmos - Launch Payment Portal";
         }
         else if (lowerInput.includes('customer') && lowerInput.includes('create')) {
-            return 'Create Customer';
+            return "👨‍🚀 Galileo's Gizmos - Register Space Explorer";
         }
         else if (lowerInput.includes('products') && (lowerInput.includes('list') || lowerInput.includes('show'))) {
-            return 'List Products';
+            return "🌌 Galileo's Gizmos - Browse Cosmic Catalog";
         }
         else if (lowerInput.includes('subscription') && lowerInput.includes('create')) {
-            return 'Create Subscription Product';
+            return "📦 Galileo's Gizmos - Setup Stellar Subscription";
         }
         else if (lowerInput.includes('create') && lowerInput.includes('product')) {
-            return 'Create Product';
+            return "⭐ Galileo's Gizmos - Add New Space Gadget";
         }
         else if (lowerInput.includes('create') && lowerInput.includes('price')) {
-            return 'Create Price';
+            return "💫 Galileo's Gizmos - Set Cosmic Pricing";
         }
         else {
-            return 'Agent Interaction';
+            return "🛸 Galileo's Gizmos - Customer Support";
         }
     }
     // Convenience methods for common operations
