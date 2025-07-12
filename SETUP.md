@@ -1,6 +1,6 @@
 # Setup Guide: Stripe Agent with Galileo Integration
 
-This guide will walk you through setting up the Stripe Agent with Galileo monitoring step by step. This is designed for beginners - no prior experience with AI agents required!
+This guide will walk you through setting up the Stripe Agent with Galileo Agent Reliability step by step. This is designed for beginners - no prior experience with AI agents required!
 
 ## 🎯 Quick Start (5 minutes)
 
@@ -23,7 +23,7 @@ npm install
 
 This installs all required packages including TypeScript, the Stripe Agent Toolkit, and Galileo monitoring tools.
 
-## 🔑 Step 2: Set Up API Keys (Most Important Step!)
+## 🔑 Step 2: Set Up API Keys 
 
 1. **Copy the example environment file:**
    ```bash
@@ -48,9 +48,9 @@ This installs all required packages including TypeScript, the Stripe Agent Toolk
 
    ### 📊 Galileo API Key (Required for monitoring)
    
-   - Sign up at [Galileo](https://docs.rungalileo.io/) <!-- TODO: Verify Galileo signup URL -->
+   - Sign up at [Galileo](https://app.galileo.ai/) 
    - Get your API key from the dashboard
-   - **Note**: Check if they offer a free tier for developers
+   - **Note**: Galileo is free for developers to get started with! 
 
 3. **Update your `.env` file:**
    ```env
@@ -151,8 +151,8 @@ Talk to your agent using natural language:
 
 1. Check error messages in the console
 2. Verify all API keys are correct in `.env`
-3. See the [Stripe documentation](https://stripe.com/docs/agents) <!-- TODO: Verify this URL -->
-4. Check [Galileo documentation](https://docs.rungalileo.io/) <!-- TODO: Verify this URL -->
+3. See the [Stripe documentation](https://stripe.com/docs/agents) 
+4. Check [Galileo documentation](https://v2docs.galileo.ai/what-is-galileo) 
 
 ## 📚 Learn More
 

@@ -19,7 +19,7 @@
 - **Node.js 18+** - [Download here](https://nodejs.org/)
 - **Stripe account** - [Free signup](https://dashboard.stripe.com/register)
 - **OpenAI account** - [Get API key](https://platform.openai.com/api-keys) (need ~$5 credit)
-- **Galileo account** - [Sign up](https://docs.rungalileo.io/) <!-- TODO: Verify Galileo signup URL -->
+- **Galileo account** - [Sign up](https://app.galileo.ai/)
 
 ### Installation
 
@@ -264,14 +264,14 @@ const llm = new ChatOpenAI({
 1. Check console error messages for specific issues
 2. Verify all API keys are set correctly in `.env`
 3. See [SETUP.md](file:///Users/erinmikail/GitHub-Local/stripe-agents/SETUP.md) for detailed setup instructions
-4. Check [Stripe Agent documentation](https://github.com/stripe/agent-toolkit) <!-- TODO: Verify this URL -->
+4. Check [Stripe Agent documentation](https://github.com/stripe/agent-toolkit) 
 
 ## 📚 Learn More
 
 - **[Stripe Agent Toolkit](https://github.com/stripe/agent-toolkit)** - Official Stripe agent tools
 - **[Stripe API Docs](https://stripe.com/docs/api)** - Complete API reference
 - **[OpenAI API Docs](https://platform.openai.com/docs)** - OpenAI API documentation  
-- **[Galileo Docs](https://docs.rungalileo.io/)** - Monitoring platform docs <!-- TODO: Verify this URL -->
+- **[Galileo Docs](https://v2docs.galileo.ai/what-is-galileo)** - Galileo documentation.
 
 ## 📈 Performance
 

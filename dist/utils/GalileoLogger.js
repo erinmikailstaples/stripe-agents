@@ -89,9 +89,47 @@ class GalileoAgentLogger {
             // Add tool spans for each tool used
             if (metrics.toolsUsed && metrics.toolsUsed.length > 0) {
                 metrics.toolsUsed.forEach((tool, index) => {
+                    // Extract more descriptive information based on the tool and context
+                    let toolInput = `Stripe Agent Tool Call: ${tool}`;
+                    let toolOutput = `Successfully executed ${tool} tool`;
+                    // Try to extract more context from the original input/output
+                    if (input && output) {
+                        toolInput = `${tool} request for: ${input}`;
+                        // Extract specific results based on tool type
+                        if (tool.includes('create') && output.includes('id')) {
+                            // Try to extract created resource IDs from output
+                            const idMatch = output.match(/"id":"([^"]+)"/);
+                            if (idMatch) {
+                                toolOutput = `${tool} successful - Created resource with ID: ${idMatch[1]}`;
+                                // Look for URLs in the output (like payment links)
+                                const urlMatch = output.match(/"url":"([^"]+)"/);
+                                if (urlMatch && urlMatch[1] !== 'null') {
+                                    toolOutput += ` - URL: ${urlMatch[1]}`;
+                                }
+                                // Look for other important fields
+                                const nameMatch = output.match(/"name":"([^"]+)"/);
+                                if (nameMatch) {
+                                    toolOutput += ` - Name: ${nameMatch[1]}`;
+                                }
+                                const amountMatch = output.match(/"unit_amount":(\d+)/);
+                                if (amountMatch) {
+                                    const amount = parseInt(amountMatch[1]) / 100;
+                                    const currencyMatch = output.match(/"currency":"([^"]+)"/);
+                                    const currency = currencyMatch ? currencyMatch[1].toUpperCase() : 'USD';
+                                    toolOutput += ` - Amount: $${amount} ${currency}`;
+                                }
+                            }
+                        }
+                        else if (tool.includes('list') && output.includes('[')) {
+                            toolOutput = `${tool} successful - Retrieved list of resources`;
+                        }
+                        else {
+                            toolOutput = `${tool} successful - ${output.substring(0, 200)}${output.length > 200 ? '...' : ''}`;
+                        }
+                    }
                     this.logger.addToolSpan({
-                        input: this.safeStringify(`Stripe Agent Tool Call: ${tool}`),
-                        output: this.safeStringify(`Stripe agent successfully executed ${tool} tool`),
+                        input: this.safeStringify(toolInput),
+                        output: this.safeStringify(toolOutput),
                         name: `Stripe Agent - ${tool}`,
                         createdAt: Date.now() * 1000000,
                         metadata: {
@@ -99,7 +137,9 @@ class GalileoAgentLogger {
                             stepNumber: String(index + 1),
                             agentType: 'stripe-agent',
                             toolType: this.safeStringify(tool),
-                            spanType: 'tool'
+                            spanType: 'tool',
+                            originalInput: this.safeStringify(input || ''),
+                            originalOutput: this.safeStringify(output || '')
                         },
                         tags: ['tool', 'stripe-agent', 'stripe'],
                     });
@@ -107,8 +147,8 @@ class GalileoAgentLogger {
             }
             // Add tool span for the Stripe agent's conversation processing
             this.logger.addToolSpan({
-                input: this.safeStringify(`Stripe Agent Processing: ${input}`),
-                output: this.safeStringify(`Stripe Agent Response: ${output}`),
+                input: this.safeStringify(input),
+                output: this.safeStringify(output),
                 name: 'Stripe Agent - Conversation Processing',
                 createdAt: Date.now() * 1000000,
                 metadata: {
@@ -118,7 +158,9 @@ class GalileoAgentLogger {
                     temperature: '0.1',
                     success: String(metrics.success),
                     errorType: this.safeStringify(metrics.errorType || 'none'),
-                    executionTime: String(metrics.executionTime || 0)
+                    executionTime: String(metrics.executionTime || 0),
+                    userRequest: this.safeStringify(input),
+                    agentResponse: this.safeStringify(output)
                 },
                 tags: ['tool', 'stripe-agent', 'conversation'],
             });
@@ -235,9 +277,22 @@ class GalileoAgentLogger {
                 try {
                     const content = this.extractMessageContent(msg);
                     const role = msg.role || 'unknown';
+                    // Create more descriptive output based on the role and content
+                    let spanOutput = content;
+                    if (role === 'assistant') {
+                        // For assistant responses, show the actual response content
+                        spanOutput = `Assistant Response: ${content}`;
+                    }
+                    else if (role === 'user') {
+                        // For user messages, show the request
+                        spanOutput = `User Request: ${content}`;
+                    }
+                    else {
+                        spanOutput = `${role} Message: ${content}`;
+                    }
                     this.logger.addToolSpan({
                         input: `[${role}] ${content}`,
-                        output: `Message ${index + 1} processed`,
+                        output: spanOutput,
                         name: `Stripe Agent - Message ${index + 1} (${role})`,
                         createdAt: Date.now() * 1000000,
                         metadata: {
@@ -246,7 +301,8 @@ class GalileoAgentLogger {
                             agentType: 'stripe-agent',
                             toolType: 'message-processing',
                             spanType: 'tool',
-                            messageLength: String(content.length)
+                            messageLength: String(content.length),
+                            messageType: role === 'assistant' ? 'response' : 'request'
                         },
                         tags: ['tool', 'stripe-agent', 'message', String(role)],
                     });
