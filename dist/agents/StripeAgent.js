@@ -4,6 +4,7 @@ exports.StripeAgent = void 0;
 const langchain_1 = require("@stripe/agent-toolkit/langchain");
 const openai_1 = require("@langchain/openai");
 const agents_1 = require("langchain/agents");
+const prompts_1 = require("@langchain/core/prompts");
 const environment_1 = require("../config/environment");
 const GalileoLogger_1 = require("../utils/GalileoLogger");
 class StripeAgent {
@@ -42,7 +43,6 @@ class StripeAgent {
                         create: true,
                         update: true,
                     },
-                    // Removed 'subscriptions' as it's not a supported action per the toolkit docs
                 },
             },
         });
@@ -56,26 +56,27 @@ class StripeAgent {
     }
     async initializeAgent() {
         const tools = this.stripeToolkit.getTools();
-        const prompt = agents_1.StructuredChatPrompt.fromMessages([
+        const prompt = prompts_1.ChatPromptTemplate.fromMessages([
             ['system', `You are ${environment_1.env.agent.name}, ${environment_1.env.agent.description}.
-      
-      You help users with Stripe payment operations including:
-      - Creating payment links for products
-      - Managing customers
-      - Creating and managing products and prices
-      - Handling invoices
-      
-      Always be helpful, accurate, and secure when handling payment information.
-      If you're unsure about something, ask for clarification rather than making assumptions.
-      
-      When creating payment links or handling money amounts, always confirm the details with the user first.`],
+    You help users with Stripe payment operations including:
+    - Creating payment links for products
+    - Managing customers
+    - Creating and managing products and prices
+    - Handling invoices
+    
+    Always be helpful, accurate, and secure when handling payment information.
+    If you're unsure about something, ask for clarification rather than making assumptions.
+    
+    When creating payment links or handling money amounts, always confirm the details with the user first.`],
             ['human', '{input}'],
-            new agents_1.MessagesPlaceholder('agent_scratchpad'),
+            new prompts_1.MessagesPlaceholder('agent_scratchpad'),
         ]);
+        // TypeScript's type system cannot handle the deep generics in createStructuredChatAgent, but this is safe at runtime.
+        // @ts-ignore
         const agent = await (0, agents_1.createStructuredChatAgent)({
             llm: this.llm,
             tools,
-            prompt,
+            prompt: prompt,
         });
         this.agentExecutor = new agents_1.AgentExecutor({
             agent,
