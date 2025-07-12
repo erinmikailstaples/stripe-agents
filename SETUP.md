@@ -21,7 +21,7 @@ cd stripe-agents
 npm install
 ```
 
-This installs all required packages including TypeScript, the Stripe Agent Toolkit, and Galileo monitoring tools.
+This installs all required packages including TypeScript, the Stripe Agent Toolkit, and Galileo Agent Reliability tools.
 
 ## 🔑 Step 2: Set Up API Keys 
 
@@ -143,9 +143,6 @@ Talk to your agent using natural language:
 - Run `npm install` again
 - Try `npm run build` to see specific errors
 
-**❌ "Galileo connection issues"**
-- Galileo monitoring is optional for testing
-- Check console output for logged metrics even if Galileo API fails
 
 ### Need Help?
 
@@ -163,4 +160,4 @@ Talk to your agent using natural language:
 
 ## 🔒 Security Note
 
-**Never commit your API keys to git!** Your `.env` file is already in `.gitignore` to keep your keys safe.
+**PSST! Never commit your API keys to git!** Your `.env` file is already in `.gitignore` to keep your keys safe.

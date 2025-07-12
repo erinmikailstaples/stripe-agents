@@ -273,15 +273,6 @@ const llm = new ChatOpenAI({
 - **[OpenAI API Docs](https://platform.openai.com/docs)** - OpenAI API documentation  
 - **[Galileo Docs](https://v2docs.galileo.ai/what-is-galileo)** - Galileo documentation.
 
-## 📈 Performance
-
-Typical performance with proper API keys:
-
-- **Response Time:** 800-2000ms average
-- **Success Rate:** 95%+ for valid requests
-- **Supported Operations:** 15+ Stripe API endpoints
-- **Concurrent Requests:** Handles 10+ simultaneous users
-
 ---
 
 Built with ❤️ using TypeScript, Stripe Agent Toolkit, OpenAI, and Galileo.
