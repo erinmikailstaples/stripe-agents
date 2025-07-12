@@ -1,80 +1,56 @@
 # Setup Guide: Stripe Agent with Galileo Integration
 
-This guide will walk you through setting up the Stripe Agent with Galileo monitoring step by step.
+This guide will walk you through setting up the Stripe Agent with Galileo monitoring step by step. This is designed for beginners - no prior experience with AI agents required!
 
-## 🎯 Quick Start
+## 🎯 Quick Start (5 minutes)
 
-If you want to get started immediately, follow these steps:
-
-1. **Install dependencies** (we'll handle the linter errors after installation)
-2. **Set up environment variables**
+1. **Clone and install**
+2. **Set up API keys**
 3. **Run the demo**
 
-## 📦 Step 1: Install Dependencies
+Let's get you started!
 
-Since we have some TypeScript configuration issues to resolve, let's install the dependencies first:
+## 📦 Step 1: Clone and Install Dependencies
 
 ```bash
+# Clone this repository
+git clone https://github.com/erinmikailstaples/stripe-agents.git
+cd stripe-agents
+
+# Install all dependencies
 npm install
 ```
 
-This will install all the required packages including the missing type definitions.
+This installs all required packages including TypeScript, the Stripe Agent Toolkit, and Galileo monitoring tools.
 
-## 🔧 Step 2: Fix TypeScript Configuration
-
-The current TypeScript configuration needs some adjustments. Update your `tsconfig.json`:
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "commonjs",
-    "lib": ["ES2022"],
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "moduleResolution": "node"
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts"
-  ]
-}
-```
-
-## 🔑 Step 3: Set Up Environment Variables
+## 🔑 Step 2: Set Up API Keys (Most Important Step!)
 
 1. **Copy the example environment file:**
    ```bash
    cp .env.example .env
    ```
 
-2. **Get your API keys:**
+2. **Get your API keys (you'll need these three services):**
 
-   ### Stripe API Key
-   - Go to [Stripe Dashboard](https://dashboard.stripe.com/)
-   - Navigate to Developers > API keys
-   - Copy your "Secret key" (starts with `sk_test_` for test mode)
+   ### 🔵 Stripe API Key (Required)
+   
+   - Go to the [Stripe Dashboard](https://dashboard.stripe.com/)
+   - Navigate to **Developers > API keys**
+   - Copy your **"Secret key"** (starts with `sk_test_` for test mode)
+   - **Free account is sufficient for testing**
 
-   ### OpenAI API Key
-   - Go to [OpenAI Platform](https://platform.openai.com/)
-   - Navigate to API keys
+   ### 🤖 OpenAI API Key (Required)
+   
+   - Go to the [OpenAI Platform](https://platform.openai.com/)
+   - Navigate to **API keys**
    - Create a new secret key
+   - **Note**: You'll need credits in your OpenAI account (usually $5-10 is enough for testing)
 
-   ### Galileo API Key
-   - Sign up at [Galileo](https://galileo.ai/)
+   ### 📊 Galileo API Key (Required for monitoring)
+   
+   - Sign up at [Galileo](https://docs.rungalileo.io/) <!-- TODO: Verify Galileo signup URL -->
    - Get your API key from the dashboard
+   - **Note**: Check if they offer a free tier for developers
 
 3. **Update your `.env` file:**
    ```env
@@ -94,194 +70,97 @@ The current TypeScript configuration needs some adjustments. Update your `tsconf
    AGENT_DESCRIPTION=An AI agent that helps with Stripe payment operations
    ```
 
-## 🚀 Step 4: Install Missing Dependencies
-
-The current package.json may need some updates. Run:
-
-```bash
-# Install the actual Stripe agent toolkit
-npm install @stripe/agent-toolkit
-
-# Install LangChain dependencies
-npm install langchain @langchain/core langchain-openai
-
-# Install OpenAI SDK
-npm install openai
-
-# Install other dependencies
-npm install dotenv zod
-
-# Install TypeScript and development dependencies
-npm install --save-dev typescript @types/node ts-node
-
-# Install a placeholder for galileo-sdk (since it might not be publicly available yet)
-# You may need to replace this with the actual Galileo SDK when available
-npm install axios  # For HTTP requests to Galileo API
-```
-
-## 🔨 Step 5: Update Package.json Dependencies
-
-Update your `package.json` with the correct dependencies:
-
-```json
-{
-  "name": "stripe-galileo-agent",
-  "version": "1.0.0",
-  "description": "A TypeScript agent using Stripe Agent Toolkit with Galileo monitoring",
-  "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
-    "test": "jest"
-  },
-  "keywords": ["stripe", "agent", "galileo", "typescript", "ai"],
-  "author": "Your Name",
-  "license": "MIT",
-  "dependencies": {
-    "@stripe/agent-toolkit": "^1.0.0",
-    "langchain": "^0.3.0",
-    "langchain-openai": "^0.3.0",
-    "@langchain/core": "^0.3.0",
-    "openai": "^4.0.0",
-    "dotenv": "^16.0.0",
-    "zod": "^3.22.0",
-    "axios": "^1.6.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.9.0",
-    "@types/jest": "^29.0.0",
-    "jest": "^29.0.0"
-  }
-}
-```
-
-## 🔧 Step 6: Handle Galileo SDK Integration
-
-Since the Galileo SDK might not be publicly available yet, you have a few options:
-
-### Option A: Use HTTP Requests (Recommended for now)
-
-Update the `GalileoLogger.ts` to use HTTP requests instead of a non-existent SDK:
-
-```typescript
-// Replace the import in src/utils/GalileoLogger.ts
-import axios from 'axios';
-
-// Update the sendToGalileo method to make actual HTTP requests
-private async sendToGalileo(logEntry: GalileoLogEntry): Promise<void> {
-  try {
-    // Replace with actual Galileo API endpoint when available
-    const response = await axios.post('https://api.galileo.ai/logs', logEntry, {
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    console.log('📊 Logged to Galileo successfully');
-  } catch (error) {
-    console.log('📊 Galileo Log Entry (simulated):', {
-      project: logEntry.projectName,
-      stream: logEntry.logStream,
-      success: logEntry.success,
-      executionTime: `${logEntry.executionTime}ms`,
-      toolsUsed: logEntry.toolsUsed,
-      errorType: logEntry.errorType,
-      timestamp: logEntry.timestamp.toISOString(),
-    });
-  }
-}
-```
-
-### Option B: Remove Galileo Integration Temporarily
-
-Comment out Galileo-related code until the SDK is available.
-
-## 🏃‍♂️ Step 7: Build and Run
+## 🏃‍♂️ Step 3: Build and Run the Demo
 
 1. **Build the project:**
+
    ```bash
    npm run build
    ```
 
 2. **Run the demo:**
+
    ```bash
    npm run dev
    ```
+
+   You should see output like this:
+
+   ```text
+   🚀 Starting Stripe Agent with Galileo Integration...
+   📊 Project: stripe-agent-demo
+   📈 Log Stream: production
+   ---
+   🤖 Running example interactions...
+   
+   📝 Example 1: Create a payment link for a digital product
+   💬 User: Create a payment link for a digital course called 'TypeScript Mastery' priced at $99 USD
+   ✅ Agent: [Agent response with payment link details]
+   ⏱️  Execution time: 1234ms
+   🔧 Tools used: create_payment_link, create_product
+   ```
+
+## 🎉 Success! What Just Happened?
+
+Your agent just:
+- ✅ Processed natural language requests
+- ✅ Made real Stripe API calls
+- ✅ Created products and payment links
+- ✅ Logged everything to Galileo for monitoring
+
+## 🚀 What's Next?
+
+### Try These Commands
+
+Talk to your agent using natural language:
+
+```text
+"Create a payment link for my online course 'Web Development Basics' priced at $149"
+"Add a new customer with email sarah@example.com"
+"Show me all active subscriptions"
+"Create an invoice for customer cus_1234 with amount $299"
+```
+
+### Customize Your Agent
+
+1. **Add new Stripe operations** - Modify [`src/agents/StripeAgent.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/agents/StripeAgent.ts)
+2. **Change the AI model** - Update OpenAI settings in [`src/config/environment.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/config/environment.ts)
+3. **Customize monitoring** - Modify [`src/utils/GalileoLogger.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/utils/GalileoLogger.ts)
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **TypeScript Errors:**
-   - Make sure all dependencies are installed
-   - Check that your `tsconfig.json` is correct
-   - Run `npm install @types/node` if you see Node.js type errors
+**❌ "Cannot find Stripe API key"**
+- Double-check your `.env` file has `STRIPE_SECRET_KEY=sk_test_...`
+- Make sure the key starts with `sk_test_` (not `pk_test_`)
 
-2. **Stripe API Errors:**
-   - Verify your Stripe API key is correct
-   - Make sure you're using the test key (starts with `sk_test_`)
-   - Check that your Stripe account is active
+**❌ "OpenAI API error"**
+- Verify your OpenAI API key in `.env`
+- Check you have credits in your OpenAI account at [platform.openai.com](https://platform.openai.com/account/usage)
 
-3. **OpenAI API Errors:**
-   - Verify your OpenAI API key
-   - Check your OpenAI account has credits
-   - Make sure the API key has the correct permissions
+**❌ "TypeScript compilation errors"**
+- Run `npm install` again
+- Try `npm run build` to see specific errors
 
-4. **Galileo Integration Issues:**
-   - For now, the Galileo integration is simulated
-   - Check the console output for logged metrics
-   - Real integration will require the actual Galileo SDK
+**❌ "Galileo connection issues"**
+- Galileo monitoring is optional for testing
+- Check console output for logged metrics even if Galileo API fails
 
-### Getting Help
+### Need Help?
 
-If you encounter issues:
+1. Check error messages in the console
+2. Verify all API keys are correct in `.env`
+3. See the [Stripe documentation](https://stripe.com/docs/agents) <!-- TODO: Verify this URL -->
+4. Check [Galileo documentation](https://docs.rungalileo.io/) <!-- TODO: Verify this URL -->
 
-1. Check the error messages carefully
-2. Verify all environment variables are set
-3. Make sure all dependencies are installed
-4. Check the TypeScript compilation output
-5. Review the console logs for detailed error information
+## 📚 Learn More
 
-## 🎉 Success!
+- **[Stripe Agent Toolkit](https://github.com/stripe/agent-toolkit)** - Official Stripe agent tools
+- **[Stripe API Docs](https://stripe.com/docs/api)** - Complete Stripe API reference  
+- **[OpenAI API Docs](https://platform.openai.com/docs)** - OpenAI API documentation
+- **[LangChain Docs](https://js.langchain.com/)** - LangChain framework documentation
 
-If everything is set up correctly, you should see:
+## 🔒 Security Note
 
-```
-🚀 Starting Stripe Agent with Galileo Integration...
-📊 Project: stripe-agent-demo
-📈 Log Stream: production
----
-🤖 Running example interactions...
-
-📝 Example 1: Create a payment link for a digital product
-💬 User: Create a payment link for a digital course called 'TypeScript Mastery' priced at $99 USD
-✅ Agent: [Agent response with payment link details]
-⏱️  Execution time: 1234ms
-🔧 Tools used: create_payment_link, create_product
-```
-
-## 🔄 Next Steps
-
-After successful setup:
-
-1. **Customize the agent** for your specific use case
-2. **Add more Stripe operations** as needed
-3. **Integrate with real Galileo API** when available
-4. **Add proper error handling** for production use
-5. **Implement user authentication** if needed
-6. **Add rate limiting** for production deployment
-7. **Set up proper logging** for production monitoring
-
-## 📚 Additional Resources
-
-- [Stripe Agent Toolkit GitHub](https://github.com/stripe/agent-toolkit)
-- [Stripe API Documentation](https://stripe.com/docs/api)
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [LangChain Documentation](https://js.langchain.com/)
-- [Galileo Documentation](https://docs.galileo.ai/)
-
-Remember to never commit your API keys to version control!
+**Never commit your API keys to git!** Your `.env` file is already in `.gitignore` to keep your keys safe.

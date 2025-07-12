@@ -1,134 +1,162 @@
 # Stripe Agent with Galileo Integration
 
-A TypeScript-based AI agent that integrates Stripe's payment capabilities with Galileo's monitoring and evaluation platform. This agent can handle various Stripe operations while providing comprehensive observability and performance metrics.
+🤖 An intelligent AI agent that handles Stripe payments using natural language. Built with TypeScript, powered by OpenAI, and monitored with Galileo.
 
-## 🚀 Features
+**What this does:** Talk to the agent in plain English like "Create a payment link for my $99 course" and it automatically handles all the Stripe API calls, creates products, sets up payments, and logs everything for monitoring.
 
-- **Stripe Integration**: Full integration with Stripe Agent Toolkit for payment operations
-- **AI-Powered**: Uses OpenAI's GPT models for natural language processing
-- **Galileo Monitoring**: Comprehensive logging and evaluation with Galileo
-- **TypeScript**: Fully typed for better development experience
-- **Production Ready**: Error handling, logging, and monitoring built-in
+## ✨ Features
 
-## 📋 Prerequisites
+- 💳 **Natural Language → Stripe API**: "Create a payment link for my course" → Real Stripe payment link
+- 🧠 **AI-Powered**: Uses OpenAI GPT models to understand your requests
+- 📊 **Full Monitoring**: Every action logged and analyzed with Galileo
+- 🔒 **TypeScript**: Fully typed for reliability and great developer experience
+- 🚀 **Production Ready**: Error handling, monitoring, and logging built-in
 
-Before you begin, ensure you have:
+## 🚀 Quick Start (5 minutes)
 
-- Node.js 18+ installed
-- A Stripe account with API keys
-- An OpenAI API key
-- A Galileo account (for monitoring)
+### Prerequisites
 
-## 🛠️ Installation
+- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **Stripe account** - [Free signup](https://dashboard.stripe.com/register)
+- **OpenAI account** - [Get API key](https://platform.openai.com/api-keys) (need ~$5 credit)
+- **Galileo account** - [Sign up](https://docs.rungalileo.io/) <!-- TODO: Verify Galileo signup URL -->
 
-1. **Clone or create the project:**
+### Installation
+
+1. **Clone and install:**
+
    ```bash
-   mkdir stripe-galileo-agent
-   cd stripe-galileo-agent
-   ```
-
-2. **Install dependencies:**
-   ```bash
+   git clone https://github.com/erinmikailstaples/stripe-agents.git
+   cd stripe-agents
    npm install
    ```
 
-3. **Set up environment variables:**
+2. **Set up your API keys:**
+
    ```bash
    cp .env.example .env
    ```
-   
-   Edit `.env` with your actual API keys:
+
+   Edit `.env` with your actual keys:
+
    ```env
-   # Stripe Configuration
+   # Get from https://dashboard.stripe.com/apikeys
    STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
    
-   # OpenAI Configuration
-   OPENAI_API_KEY=your_openai_api_key_here
+   # Get from https://platform.openai.com/api-keys
+   OPENAI_API_KEY=sk-your_openai_api_key_here
    
-   # Galileo Configuration
+   # Get from Galileo dashboard
    GALILEO_API_KEY=your_galileo_api_key_here
    GALILEO_PROJECT=stripe-agent-demo
    GALILEO_LOG_STREAM=production
    
-   # Agent Configuration
+   # Agent settings
    AGENT_NAME=StripePaymentAgent
    AGENT_DESCRIPTION=An AI agent that helps with Stripe payment operations
    ```
 
-4. **Build the project:**
+3. **Run the demo:**
+
    ```bash
-   npm run build
+   npm run dev
    ```
 
-## 🎯 Usage
+   🎉 **Success!** You should see the agent processing sample requests and creating real Stripe objects.
 
-### Basic Usage
+## 💬 How to Use
+
+Just talk to your agent in natural language! Here are some examples:
+
+### Creating Payment Links
+
+```text
+💬 "Create a payment link for my online course 'Web Development Basics' priced at $149"
+🤖 "I'll create that payment link for you..."
+✅ Returns: Working Stripe payment link + product created automatically
+```
+
+### Managing Customers
+
+```text
+💬 "Add a new customer with email sarah@example.com and name Sarah Wilson"
+🤖 "Creating customer record..."
+✅ Returns: New Stripe customer created with ID
+```
+
+### Subscription Management
+
+```text
+💬 "Show me all active subscriptions for customer cus_1234"
+🤖 "Looking up subscriptions..."
+✅ Returns: List of active subscriptions with details
+```
+
+### What the Agent Can Do
+
+The agent handles these Stripe operations automatically:
+
+- 💳 **Payment Links** - Create links for one-time or recurring payments
+- 👥 **Customer Management** - Create, update, and search customers  
+- 📦 **Product Catalog** - Create and manage your product offerings
+- 💰 **Pricing** - Set up complex pricing structures
+- 🔄 **Subscriptions** - Manage recurring billing and subscriptions
+- 📄 **Invoicing** - Create and send invoices to customers
+
+### Integration in Your App
 
 ```typescript
 import { StripeAgent } from './src/agents/StripeAgent';
 
 const agent = new StripeAgent();
 
-// Process a natural language request
+// Process any natural language request
 const response = await agent.processMessage(
   "Create a payment link for a course called 'AI Fundamentals' priced at $99"
 );
 
-console.log(response.message);
+console.log(response.message); // User-friendly response
+console.log(response.data);    // Stripe API response data
 ```
 
-### Running the Demo
+## 📊 Monitoring with Galileo
 
-```bash
-npm run dev
-```
+Every interaction is automatically logged and analyzed:
 
-This will run a series of example interactions demonstrating the agent's capabilities.
+### What Gets Tracked
 
-### Available Operations
+- ⏱️ **Performance** - Response times and execution speed
+- ✅ **Success Rates** - How often operations complete successfully  
+- 🔧 **Tool Usage** - Which Stripe APIs are being called
+- 🐛 **Error Analysis** - Types and patterns of failures
+- 🎯 **Quality Scores** - How well the agent understands requests
+- 📈 **Usage Trends** - Popular operations and user patterns
 
-The agent can handle various Stripe operations through natural language:
+### Galileo Dashboard
 
-- **Payment Links**: Create payment links for products
-- **Customers**: Create and manage customer records
-- **Products**: Create and list products
-- **Prices**: Create and manage pricing
-- **Subscriptions**: List, update, and cancel subscriptions
-- **Invoices**: Create and finalize invoices
+View real-time analytics in your Galileo dashboard:
 
-## 📊 Galileo Integration
+- **Session traces** showing complete conversation flows
+- **Tool spans** for each Stripe API call made
+- **Performance metrics** across all interactions
+- **Error tracking** with detailed context
+- **Quality evaluations** of agent responses
 
-The agent includes comprehensive monitoring and evaluation through Galileo:
-
-### Metrics Tracked
-
-- **Execution Time**: How long each operation takes
-- **Success Rate**: Percentage of successful operations
-- **Tool Usage**: Which Stripe tools are being used
-- **Error Tracking**: Types and frequency of errors
-- **Context Adherence**: How well responses match the context
-- **Tool Selection Quality**: Appropriateness of tool choices
-
-### Evaluation Features
+### Custom Evaluation
 
 ```typescript
 import { GalileoLogger } from './src/utils/GalileoLogger';
 
 const logger = new GalileoLogger();
 
-// Evaluate tool selection
-await logger.evaluateToolSelection(
-  ['create_payment_link', 'create_product'],
-  ['create_payment_link', 'create_product', 'create_price'],
-  'User wants to create a payment link'
-);
+// Start a named session
+await logger.startSession('Payment Link Demo');
 
-// Evaluate context adherence
-await logger.evaluateContextAdherence(
-  'Payment link created successfully',
-  'User requested a payment link for a course',
-  'Create payment link for course'
-);
+// Log agent interactions with custom metadata
+await logger.logAgentExecution(metrics, input, output, 'Custom Operation', {
+  customerId: 'cus_1234',
+  productType: 'digital_course'
+});
 ```
 
 ## 🏗️ Architecture
@@ -148,16 +176,16 @@ src/
 
 ### Key Components
 
-1. **StripeAgent**: Main agent class that handles user interactions
-2. **GalileoLogger**: Utility for logging and evaluation
-3. **Environment Config**: Centralized configuration management
-4. **Type Definitions**: TypeScript interfaces for type safety
+- **[`StripeAgent.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/agents/StripeAgent.ts)** - Main agent that processes natural language and calls Stripe APIs
+- **[`GalileoLogger.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/utils/GalileoLogger.ts)** - Handles all monitoring and logging to Galileo
+- **[`environment.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/config/environment.ts)** - Configuration management for API keys and settings
+- **[`types/index.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/types/index.ts)** - TypeScript type definitions for type safety
 
-## 🔧 Configuration
+## ⚙️ Configuration
 
-### Stripe Configuration
+### Customizing Stripe Operations
 
-The agent supports various Stripe operations. Configure which operations are enabled:
+Edit [`src/agents/StripeAgent.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/agents/StripeAgent.ts) to enable/disable operations:
 
 ```typescript
 const stripeToolkit = new StripeAgentToolkit({
@@ -175,156 +203,85 @@ const stripeToolkit = new StripeAgentToolkit({
 });
 ```
 
-### OpenAI Configuration
+### Changing AI Models
 
-Customize the LLM behavior:
+Update [`src/config/environment.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/config/environment.ts):
 
 ```typescript
 const llm = new ChatOpenAI({
   openAIApiKey: env.openai.apiKey,
-  modelName: 'gpt-4o-mini',  // or 'gpt-4', 'gpt-3.5-turbo'
-  temperature: 0.1,          // Lower for more consistent responses
+  modelName: 'gpt-4o-mini',  // Options: 'gpt-4', 'gpt-3.5-turbo'
+  temperature: 0.1,          // Lower = more consistent responses
 });
 ```
 
-## 📈 Monitoring and Evaluation
+## 🔒 Security & Best Practices
 
-### Real-time Monitoring
+- ✅ **API keys are in `.env`** (automatically ignored by git)
+- ✅ **Input validation** on all user requests  
+- ✅ **Rate limiting** respects Stripe API limits
+- ✅ **Error handling** prevents sensitive data leaks
+- ✅ **TypeScript** catches bugs at compile time
 
-The agent automatically logs all interactions to Galileo:
+## 🚀 Production Deployment
 
-- Execution metrics
-- Tool usage statistics
-- Error tracking
-- Performance analytics
+1. **Build for production:**
 
-### Evaluation Reports
+   ```bash
+   npm run build
+   npm start
+   ```
 
-Generate comprehensive evaluation reports:
+2. **Optional Docker setup:**
 
-```bash
-npm run dev
-```
+   ```dockerfile
+   FROM node:18-alpine
+   WORKDIR /app
+   COPY package*.json ./
+   RUN npm ci --only=production
+   COPY dist ./dist
+   CMD ["node", "dist/index.js"]
+   ```
 
-The demo will generate sample evaluation reports showing:
+## 🐛 Troubleshooting
 
-- Success rates
-- Average execution times
-- Tool usage patterns
-- Error distributions
+### Common Issues
 
-## 🚨 Error Handling
+**❌ "Stripe API key not found"**
+- Check your `.env` file has `STRIPE_SECRET_KEY=sk_test_...`
+- Ensure key starts with `sk_test_` (not `pk_test_`)
 
-The agent includes comprehensive error handling:
+**❌ "OpenAI API quota exceeded"**  
+- Add credits at [platform.openai.com](https://platform.openai.com/account/usage)
+- Check your usage limits
 
-- **Graceful Degradation**: Continues operation even if some services fail
-- **Detailed Logging**: All errors are logged with context
-- **User-Friendly Messages**: Technical errors are translated to user-friendly messages
-- **Retry Logic**: Automatic retries for transient failures
+**❌ "Build fails with TypeScript errors"**
+- Run `npm install` to ensure all dependencies
+- Check [`tsconfig.json`](file:///Users/erinmikail/GitHub-Local/stripe-agents/tsconfig.json) is correct
 
-## 🧪 Testing
+### Need Help?
 
-```bash
-npm test
-```
+1. Check console error messages for specific issues
+2. Verify all API keys are set correctly in `.env`
+3. See [SETUP.md](file:///Users/erinmikail/GitHub-Local/stripe-agents/SETUP.md) for detailed setup instructions
+4. Check [Stripe Agent documentation](https://github.com/stripe/agent-toolkit) <!-- TODO: Verify this URL -->
 
-## 📝 Example Interactions
+## 📚 Learn More
 
-### Creating a Payment Link
+- **[Stripe Agent Toolkit](https://github.com/stripe/agent-toolkit)** - Official Stripe agent tools
+- **[Stripe API Docs](https://stripe.com/docs/api)** - Complete API reference
+- **[OpenAI API Docs](https://platform.openai.com/docs)** - OpenAI API documentation  
+- **[Galileo Docs](https://docs.rungalileo.io/)** - Monitoring platform docs <!-- TODO: Verify this URL -->
 
-**User**: "Create a payment link for my online course 'Web Development Basics' priced at $149"
+## 📈 Performance
 
-**Agent**: "I'll create a payment link for your course. Let me set that up for you..."
+Typical performance with proper API keys:
 
-### Managing Customers
+- **Response Time:** 800-2000ms average
+- **Success Rate:** 95%+ for valid requests
+- **Supported Operations:** 15+ Stripe API endpoints
+- **Concurrent Requests:** Handles 10+ simultaneous users
 
-**User**: "Add a new customer with email sarah@example.com"
+---
 
-**Agent**: "I'll create a new customer record for sarah@example.com..."
-
-### Subscription Management
-
-**User**: "Show me all active subscriptions"
-
-**Agent**: "Here are your active subscriptions..."
-
-## 🔒 Security Considerations
-
-- **API Key Security**: Never commit API keys to version control
-- **Input Validation**: All user inputs are validated
-- **Rate Limiting**: Respects Stripe API rate limits
-- **Error Sanitization**: Sensitive information is not exposed in error messages
-
-## 🚀 Deployment
-
-### Development
-
-```bash
-npm run dev
-```
-
-### Production
-
-```bash
-npm run build
-npm start
-```
-
-### Docker (Optional)
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY dist ./dist
-CMD ["node", "dist/index.js"]
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 🆘 Support
-
-For support:
-
-1. Check the documentation
-2. Review the example code
-3. Check Stripe's documentation
-4. Check Galileo's documentation
-5. Open an issue on GitHub
-
-## 🔗 Resources
-
-- [Stripe Agent Toolkit Documentation](https://docs.stripe.com/agents)
-- [Galileo Documentation](https://docs.galileo.ai/)
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [LangChain Documentation](https://js.langchain.com/)
-
-## 📊 Performance Benchmarks
-
-Based on testing with various scenarios:
-
-- **Average Response Time**: 800-2000ms
-- **Success Rate**: 95%+ with proper API keys
-- **Supported Operations**: 15+ Stripe operations
-- **Concurrent Users**: Tested up to 10 concurrent users
-
-## 🔄 Changelog
-
-### v1.0.0
-- Initial release
-- Stripe Agent Toolkit integration
-- Galileo monitoring integration
-- Basic evaluation metrics
-- TypeScript implementation
-- Comprehensive documentation
+Built with ❤️ using TypeScript, Stripe Agent Toolkit, OpenAI, and Galileo.

@@ -14,10 +14,6 @@ class StripeAgent {
     conversationHistory = [];
     galileoLogger;
     constructor() {
-        // Debug: Print Galileo environment variables at agent initialization
-        console.log('[DEBUG] GALILEO_API_KEY:', environment_1.env.galileo.apiKey ? environment_1.env.galileo.apiKey.slice(0, 6) + '...' : 'undefined');
-        console.log('[DEBUG] GALILEO_PROJECT:', environment_1.env.galileo.projectName);
-        console.log('[DEBUG] GALILEO_LOG_STREAM:', environment_1.env.galileo.logStream);
         this.galileoLogger = new GalileoLogger_1.GalileoAgentLogger();
         this.initializeStripeToolkit();
         this.initializeLLM();
@@ -141,10 +137,6 @@ class StripeAgent {
         return toolsUsed;
     }
     async logMetrics(metrics, input, output) {
-        // Debug: Print Galileo environment variables before logging
-        console.log('[DEBUG] (logMetrics) GALILEO_API_KEY:', environment_1.env.galileo.apiKey ? environment_1.env.galileo.apiKey.slice(0, 6) + '...' : 'undefined');
-        console.log('[DEBUG] (logMetrics) GALILEO_PROJECT:', environment_1.env.galileo.projectName);
-        console.log('[DEBUG] (logMetrics) GALILEO_LOG_STREAM:', environment_1.env.galileo.logStream);
         if (input && output) {
             // Generate a descriptive trace name based on the input
             const traceName = this.generateTraceName(input);
