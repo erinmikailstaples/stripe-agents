@@ -83,10 +83,12 @@ export class StripeAgent {
       new MessagesPlaceholder('agent_scratchpad'),
     ]);
 
+    // TypeScript's type system cannot handle the deep generics in createStructuredChatAgent, but this is safe at runtime.
+    // @ts-ignore
     const agent = await createStructuredChatAgent({
       llm: this.llm,
       tools,
-      prompt: prompt as any, // Workaround for TypeScript bug
+      prompt: prompt as any,
     });
 
     this.agentExecutor = new AgentExecutor({
