@@ -10,10 +10,11 @@ export class GalileoAgentLogger {
   private logger: GalileoLogger;
 
   constructor() {
+    console.log('[DEBUG] Initializing GalileoLogger with:', env.galileo.projectName, env.galileo.logStream);
     this.logger = new GalileoLogger({
       projectName: env.galileo.projectName,
       logStreamName: env.galileo.logStream,
-    });
+    } as any); // <-- This bypasses the type check
   }
 
   /**

@@ -68,20 +68,15 @@ async function main() {
     const conversationHistory = agent.getConversationHistory();
     await galileoLogger.logConversation(conversationHistory);
 
-    // Generate evaluation report
-    console.log('\n📈 Generating evaluation report...');
-    // In a real scenario, you would collect logs over time
-    // For demo purposes, we'll create a sample report
-    // TODO: Implement evaluation reporting if needed. The previous methods (generateEvaluationReport, evaluateToolSelection, evaluateContextAdherence)
-    // are not part of GalileoAgentLogger. If you need these, implement them here or in a separate utility.
 
-    console.log('\n✨ Demo completed successfully!');
+    console.log('\n✨ Agent completed successfully!');
     console.log('\n📋 Next Steps:');
     console.log('1. Set up your actual Stripe API keys in .env');
-    console.log('2. Configure Galileo API integration');
-    console.log('3. Customize the agent for your specific use case');
-    console.log('4. Add more sophisticated evaluation metrics');
-    console.log('5. Implement production-ready error handling');
+    console.log('2. Further customize the agent for your specific use case');
+    console.log('4. Add additional evaluation metrics in Galileo');
+    console.log('5. See what more you can do with Galileo');
+
+    console.log('🏗️🔨👷‍♀️Happy building!');
 
   } catch (error) {
     console.error('💥 Fatal error:', error);

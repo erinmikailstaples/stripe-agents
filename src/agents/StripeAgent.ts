@@ -19,8 +19,13 @@ export class StripeAgent {
   private agentExecutor!: AgentExecutor;
   private conversationHistory: AgentMessage[] = [];
   private galileoLogger: GalileoAgentLogger;
+  private agentScratchpad: any[] = []; // Track the scratchpad as an array
 
   constructor() {
+    // Debug: Print Galileo environment variables at agent initialization
+    console.log('[DEBUG] GALILEO_API_KEY:', env.galileo.apiKey ? env.galileo.apiKey.slice(0, 6) + '...' : 'undefined');
+    console.log('[DEBUG] GALILEO_PROJECT:', env.galileo.projectName);
+    console.log('[DEBUG] GALILEO_LOG_STREAM:', env.galileo.logStream);
     this.galileoLogger = new GalileoAgentLogger();
     this.initializeStripeToolkit();
     this.initializeLLM();
@@ -84,6 +89,8 @@ If you're unsure about something, ask for clarification rather than making assum
 When creating payment links or handling money amounts, always confirm the details with the user first.`],
       ['human', '{input}'],
       new MessagesPlaceholder('agent_scratchpad'),
+      // Optionally, you could add a static message here for testing:
+      // ['assistant', 'Ready to help!'],
     ]);
 
     // TypeScript's type system cannot handle the deep generics in createStructuredChatAgent, but this is safe at runtime.
@@ -113,11 +120,23 @@ When creating payment links or handling money amounts, always confirm the detail
         timestamp: new Date(),
       });
 
+      // Always ensure agentScratchpad is an array
+      if (!Array.isArray(this.agentScratchpad)) {
+        this.agentScratchpad = [];
+      }
+
       // Process the message with the agent
       const result = await this.agentExecutor.invoke({
         input: userMessage,
-        agent_scratchpad: [],
+        agent_scratchpad: this.agentScratchpad,
       });
+
+      // Update the scratchpad for the next turn (if present in result)
+      if (Array.isArray(result.agent_scratchpad)) {
+        this.agentScratchpad = result.agent_scratchpad;
+      } else {
+        this.agentScratchpad = [];
+      }
 
       // Add assistant response to conversation history
       this.conversationHistory.push({
@@ -178,6 +197,10 @@ When creating payment links or handling money amounts, always confirm the detail
   }
 
   private async logMetrics(metrics: AgentMetrics, input?: string, output?: string): Promise<void> {
+    // Debug: Print Galileo environment variables before logging
+    console.log('[DEBUG] (logMetrics) GALILEO_API_KEY:', env.galileo.apiKey ? env.galileo.apiKey.slice(0, 6) + '...' : 'undefined');
+    console.log('[DEBUG] (logMetrics) GALILEO_PROJECT:', env.galileo.projectName);
+    console.log('[DEBUG] (logMetrics) GALILEO_LOG_STREAM:', env.galileo.logStream);
     if (input && output) {
       await this.galileoLogger.logAgentExecution(metrics, input, output);
     }

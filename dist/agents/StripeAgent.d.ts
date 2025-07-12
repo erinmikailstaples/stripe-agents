@@ -5,6 +5,7 @@ export declare class StripeAgent {
     private agentExecutor;
     private conversationHistory;
     private galileoLogger;
+    private agentScratchpad;
     constructor();
     private initializeStripeToolkit;
     private initializeLLM;

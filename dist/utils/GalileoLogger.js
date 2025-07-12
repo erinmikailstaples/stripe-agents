@@ -10,10 +10,11 @@ const galileo_1 = require("galileo");
 class GalileoAgentLogger {
     logger;
     constructor() {
+        console.log('[DEBUG] Initializing GalileoLogger with:', environment_1.env.galileo.projectName, environment_1.env.galileo.logStream);
         this.logger = new galileo_1.GalileoLogger({
             projectName: environment_1.env.galileo.projectName,
             logStreamName: environment_1.env.galileo.logStream,
-        });
+        }); // <-- This bypasses the type check
     }
     /**
      * Log a single agent execution to Galileo, including workflow and LLM spans.
