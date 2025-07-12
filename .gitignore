@@ -5,3 +5,4 @@ env
 # virtual  environments
 venv
 .venv
+node_modules

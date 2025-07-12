@@ -5,28 +5,33 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest"
   },
-  "keywords": ["stripe", "agent", "galileo", "typescript", "ai"],
-  "author": "Your Name",
-  "license": "MIT",
+  "keywords": [
+    "stripe",
+    "agent",
+    "galileo",
+    "typescript",
+    "ai"
+  ],
+  "author": "Erin Mikail Staples",
   "dependencies": {
-    "@stripe/agent-toolkit": "^1.0.0",
-    "langchain": "^0.3.0",
-    "langchain-openai": "^0.3.0",
     "@langchain/core": "^0.3.0",
-    "openai": "^4.0.0",
-    "galileo-sdk": "^1.0.0",
+    "@langchain/openai": "^0.3.0",
+    "@stripe/agent-toolkit": "^0.1.21",
+    "axios": "^1.6.0",
     "dotenv": "^16.0.0",
+    "langchain": "^0.3.29",
+    "openai": "^4.0.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.9.0",
     "@types/jest": "^29.0.0",
-    "jest": "^29.0.0"
+    "@types/node": "^20.0.0",
+    "jest": "^29.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
   }
 }

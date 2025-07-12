@@ -1,5 +1,5 @@
 import { StripeAgentToolkit } from '@stripe/agent-toolkit/langchain';
-import { ChatOpenAI } from 'langchain-openai';
+import { ChatOpenAI } from '@langchain/openai';
 import { AgentExecutor, createStructuredChatAgent } from 'langchain/agents';
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
 import { env } from '../config/environment';
@@ -14,9 +14,9 @@ import {
 } from '../types';
 
 export class StripeAgent {
-  private stripeToolkit: StripeAgentToolkit;
-  private llm: ChatOpenAI;
-  private agentExecutor: AgentExecutor;
+  private stripeToolkit!: StripeAgentToolkit;
+  private llm!: ChatOpenAI;
+  private agentExecutor!: AgentExecutor;
   private conversationHistory: AgentMessage[] = [];
   private galileoLogger: GalileoLogger;
 
@@ -37,25 +37,20 @@ export class StripeAgent {
           },
           customers: {
             create: true,
-            list: true,
+            read: true,
           },
           products: {
             create: true,
-            list: true,
+            read: true,
           },
           prices: {
             create: true,
-            list: true,
+            read: true,
           },
           invoices: {
             create: true,
-            finalize: true,
-          },
-          subscriptions: {
-            list: true,
             update: true,
-            cancel: true,
-          },
+          }, 
         },
       },
     });
@@ -74,17 +69,16 @@ export class StripeAgent {
     
     const prompt = ChatPromptTemplate.fromMessages([
       ['system', `You are ${env.agent.name}, ${env.agent.description}.
-      
-      You help users with Stripe payment operations including:
-      - Creating payment links for products
-      - Managing customers
-      - Creating and managing products and prices
-      - Handling invoices and subscriptions
-      
-      Always be helpful, accurate, and secure when handling payment information.
-      If you're unsure about something, ask for clarification rather than making assumptions.
-      
-      When creating payment links or handling money amounts, always confirm the details with the user first.`],
+    You help users with Stripe payment operations including:
+    - Creating payment links for products
+    - Managing customers
+    - Creating and managing products and prices
+    - Handling invoices
+    
+    Always be helpful, accurate, and secure when handling payment information.
+    If you're unsure about something, ask for clarification rather than making assumptions.
+    
+    When creating payment links or handling money amounts, always confirm the details with the user first.`],
       ['human', '{input}'],
       new MessagesPlaceholder('agent_scratchpad'),
     ]);
@@ -92,7 +86,7 @@ export class StripeAgent {
     const agent = await createStructuredChatAgent({
       llm: this.llm,
       tools,
-      prompt,
+      prompt: prompt as any, // Workaround for TypeScript bug
     });
 
     this.agentExecutor = new AgentExecutor({
