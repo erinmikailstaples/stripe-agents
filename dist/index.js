@@ -9,9 +9,12 @@ async function main() {
     console.log(`📈 Log Stream: ${environment_1.env.galileo.logStream}`);
     console.log('---');
     try {
-        // Initialize the agent
+        // Initialize the agent and Galileo logger
         const agent = new StripeAgent_1.StripeAgent();
         const galileoLogger = new GalileoLogger_1.GalileoAgentLogger();
+        // Start a session for all example interactions
+        const sessionId = await galileoLogger.startSession('Stripe Agent Demo Session');
+        console.log(`📊 Started Galileo session: ${sessionId}`);
         // Example interactions
         const examples = [
             {
@@ -32,6 +35,7 @@ async function main() {
             }
         ];
         console.log('🤖 Running example interactions...\n');
+        // Process each example as a separate trace within the session
         for (let i = 0; i < examples.length; i++) {
             const example = examples[i];
             console.log(`\n📝 Example ${i + 1}: ${example.description}`);
@@ -58,10 +62,12 @@ async function main() {
             // Add a small delay between examples
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        // Log conversation history to Galileo
+        // Log conversation summary to Galileo
         console.log('\n📊 Logging conversation to Galileo...');
         const conversationHistory = agent.getConversationHistory();
         await galileoLogger.logConversation(conversationHistory);
+        // Conclude the session and flush all traces
+        await galileoLogger.concludeSession();
         console.log('\n✨ Agent completed successfully!');
         console.log('\n📋 Next Steps:');
         console.log('1. Set up your actual Stripe API keys in .env');

@@ -4,7 +4,7 @@ exports.StripeAgent = void 0;
 const langchain_1 = require("@stripe/agent-toolkit/langchain");
 const openai_1 = require("@langchain/openai");
 const agents_1 = require("langchain/agents");
-const prompts_1 = require("@langchain/core/prompts");
+const hub_1 = require("langchain/hub");
 const environment_1 = require("../config/environment");
 const GalileoLogger_1 = require("../utils/GalileoLogger");
 class StripeAgent {
@@ -13,7 +13,6 @@ class StripeAgent {
     agentExecutor;
     conversationHistory = [];
     galileoLogger;
-    agentScratchpad = []; // Track the scratchpad as an array
     constructor() {
         // Debug: Print Galileo environment variables at agent initialization
         console.log('[DEBUG] GALILEO_API_KEY:', environment_1.env.galileo.apiKey ? environment_1.env.galileo.apiKey.slice(0, 6) + '...' : 'undefined');
@@ -61,32 +60,13 @@ class StripeAgent {
     }
     async initializeAgent() {
         const tools = this.stripeToolkit.getTools();
-        const prompt = prompts_1.ChatPromptTemplate.fromMessages([
-            ['system', `You are ${environment_1.env.agent.name}, ${environment_1.env.agent.description}.
-You have access to the following tools: {tool_names}
-{tools}
-
-You help users with Stripe payment operations including:
-- Creating payment links for products
-- Managing customers
-- Creating and managing products and prices
-- Handling invoices
-
-Always be helpful, accurate, and secure when handling payment information.
-If you're unsure about something, ask for clarification rather than making assumptions.
-
-When creating payment links or handling money amounts, always confirm the details with the user first.`],
-            ['human', '{input}'],
-            new prompts_1.MessagesPlaceholder('agent_scratchpad'),
-            // Optionally, you could add a static message here for testing:
-            // ['assistant', 'Ready to help!'],
-        ]);
-        // TypeScript's type system cannot handle the deep generics in createStructuredChatAgent, but this is safe at runtime.
+        // Use the pre-built structured chat agent prompt from LangChain Hub
+        const prompt = await (0, hub_1.pull)('hwchase17/structured-chat-agent');
         // @ts-ignore
         const agent = await (0, agents_1.createStructuredChatAgent)({
             llm: this.llm,
             tools,
-            prompt: prompt,
+            prompt,
         });
         this.agentExecutor = new agents_1.AgentExecutor({
             agent,
@@ -104,22 +84,10 @@ When creating payment links or handling money amounts, always confirm the detail
                 content: userMessage,
                 timestamp: new Date(),
             });
-            // Always ensure agentScratchpad is an array
-            if (!Array.isArray(this.agentScratchpad)) {
-                this.agentScratchpad = [];
-            }
-            // Process the message with the agent
+            // Process the message with the agent - let LangChain handle agent_scratchpad
             const result = await this.agentExecutor.invoke({
                 input: userMessage,
-                agent_scratchpad: this.agentScratchpad,
             });
-            // Update the scratchpad for the next turn (if present in result)
-            if (Array.isArray(result.agent_scratchpad)) {
-                this.agentScratchpad = result.agent_scratchpad;
-            }
-            else {
-                this.agentScratchpad = [];
-            }
             // Add assistant response to conversation history
             this.conversationHistory.push({
                 role: 'assistant',
@@ -178,7 +146,34 @@ When creating payment links or handling money amounts, always confirm the detail
         console.log('[DEBUG] (logMetrics) GALILEO_PROJECT:', environment_1.env.galileo.projectName);
         console.log('[DEBUG] (logMetrics) GALILEO_LOG_STREAM:', environment_1.env.galileo.logStream);
         if (input && output) {
-            await this.galileoLogger.logAgentExecution(metrics, input, output);
+            // Generate a descriptive trace name based on the input
+            const traceName = this.generateTraceName(input);
+            await this.galileoLogger.logAgentExecution(metrics, input, output, traceName);
+        }
+    }
+    generateTraceName(input) {
+        // Generate meaningful trace names based on user input
+        const lowerInput = input.toLowerCase();
+        if (lowerInput.includes('payment link')) {
+            return 'Create Payment Link';
+        }
+        else if (lowerInput.includes('customer') && lowerInput.includes('create')) {
+            return 'Create Customer';
+        }
+        else if (lowerInput.includes('products') && (lowerInput.includes('list') || lowerInput.includes('show'))) {
+            return 'List Products';
+        }
+        else if (lowerInput.includes('subscription') && lowerInput.includes('create')) {
+            return 'Create Subscription Product';
+        }
+        else if (lowerInput.includes('create') && lowerInput.includes('product')) {
+            return 'Create Product';
+        }
+        else if (lowerInput.includes('create') && lowerInput.includes('price')) {
+            return 'Create Price';
+        }
+        else {
+            return 'Agent Interaction';
         }
     }
     // Convenience methods for common operations

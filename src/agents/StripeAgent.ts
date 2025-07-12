@@ -1,7 +1,8 @@
 import { StripeAgentToolkit } from '@stripe/agent-toolkit/langchain';
 import { ChatOpenAI } from '@langchain/openai';
 import { AgentExecutor, createStructuredChatAgent } from 'langchain/agents';
-import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { pull } from 'langchain/hub';
 import { env } from '../config/environment';
 import { GalileoAgentLogger } from '../utils/GalileoLogger';
 import { 
@@ -19,7 +20,6 @@ export class StripeAgent {
   private agentExecutor!: AgentExecutor;
   private conversationHistory: AgentMessage[] = [];
   private galileoLogger: GalileoAgentLogger;
-  private agentScratchpad: any[] = []; // Track the scratchpad as an array
 
   constructor() {
     // Debug: Print Galileo environment variables at agent initialization
@@ -72,33 +72,14 @@ export class StripeAgent {
   private async initializeAgent(): Promise<void> {
     const tools = this.stripeToolkit.getTools();
     
-    const prompt = ChatPromptTemplate.fromMessages([
-      ['system', `You are ${env.agent.name}, ${env.agent.description}.
-You have access to the following tools: {tool_names}
-{tools}
+    // Use the pre-built structured chat agent prompt from LangChain Hub
+    const prompt = await pull('hwchase17/structured-chat-agent') as any;
 
-You help users with Stripe payment operations including:
-- Creating payment links for products
-- Managing customers
-- Creating and managing products and prices
-- Handling invoices
-
-Always be helpful, accurate, and secure when handling payment information.
-If you're unsure about something, ask for clarification rather than making assumptions.
-
-When creating payment links or handling money amounts, always confirm the details with the user first.`],
-      ['human', '{input}'],
-      new MessagesPlaceholder('agent_scratchpad'),
-      // Optionally, you could add a static message here for testing:
-      // ['assistant', 'Ready to help!'],
-    ]);
-
-    // TypeScript's type system cannot handle the deep generics in createStructuredChatAgent, but this is safe at runtime.
     // @ts-ignore
     const agent = await createStructuredChatAgent({
       llm: this.llm,
       tools,
-      prompt: prompt as any,
+      prompt,
     });
 
     this.agentExecutor = new AgentExecutor({
@@ -120,23 +101,10 @@ When creating payment links or handling money amounts, always confirm the detail
         timestamp: new Date(),
       });
 
-      // Always ensure agentScratchpad is an array
-      if (!Array.isArray(this.agentScratchpad)) {
-        this.agentScratchpad = [];
-      }
-
-      // Process the message with the agent
+      // Process the message with the agent - let LangChain handle agent_scratchpad
       const result = await this.agentExecutor.invoke({
         input: userMessage,
-        agent_scratchpad: this.agentScratchpad,
       });
-
-      // Update the scratchpad for the next turn (if present in result)
-      if (Array.isArray(result.agent_scratchpad)) {
-        this.agentScratchpad = result.agent_scratchpad;
-      } else {
-        this.agentScratchpad = [];
-      }
 
       // Add assistant response to conversation history
       this.conversationHistory.push({
@@ -202,7 +170,30 @@ When creating payment links or handling money amounts, always confirm the detail
     console.log('[DEBUG] (logMetrics) GALILEO_PROJECT:', env.galileo.projectName);
     console.log('[DEBUG] (logMetrics) GALILEO_LOG_STREAM:', env.galileo.logStream);
     if (input && output) {
-      await this.galileoLogger.logAgentExecution(metrics, input, output);
+      // Generate a descriptive trace name based on the input
+      const traceName = this.generateTraceName(input);
+      await this.galileoLogger.logAgentExecution(metrics, input, output, traceName);
+    }
+  }
+
+  private generateTraceName(input: string): string {
+    // Generate meaningful trace names based on user input
+    const lowerInput = input.toLowerCase();
+    
+    if (lowerInput.includes('payment link')) {
+      return 'Create Payment Link';
+    } else if (lowerInput.includes('customer') && lowerInput.includes('create')) {
+      return 'Create Customer';
+    } else if (lowerInput.includes('products') && (lowerInput.includes('list') || lowerInput.includes('show'))) {
+      return 'List Products';
+    } else if (lowerInput.includes('subscription') && lowerInput.includes('create')) {
+      return 'Create Subscription Product';
+    } else if (lowerInput.includes('create') && lowerInput.includes('product')) {
+      return 'Create Product';
+    } else if (lowerInput.includes('create') && lowerInput.includes('price')) {
+      return 'Create Price';
+    } else {
+      return 'Agent Interaction';
     }
   }
 

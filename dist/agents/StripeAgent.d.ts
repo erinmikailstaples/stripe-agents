@@ -5,7 +5,6 @@ export declare class StripeAgent {
     private agentExecutor;
     private conversationHistory;
     private galileoLogger;
-    private agentScratchpad;
     constructor();
     private initializeStripeToolkit;
     private initializeLLM;
@@ -13,6 +12,7 @@ export declare class StripeAgent {
     processMessage(userMessage: string): Promise<AgentResponse>;
     private extractToolsUsed;
     private logMetrics;
+    private generateTraceName;
     createPaymentLink(request: PaymentLinkRequest): Promise<AgentResponse>;
     createCustomer(request: CustomerRequest): Promise<AgentResponse>;
     getConversationHistory(): AgentMessage[];
