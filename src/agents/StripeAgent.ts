@@ -68,66 +68,8 @@ export class StripeAgent {
   private async initializeAgent(): Promise<void> {
     const tools = this.stripeToolkit.getTools();
     
-    // Create a custom prompt that emphasizes showing payment links clearly
-    const prompt = ChatPromptTemplate.fromMessages([
-      ["system", `You are Gizmo, the AI customer service agent for Galileo's Gizmos - a space-themed ecommerce store.
-
-CRITICAL PAYMENT LINK INSTRUCTIONS:
-- When you create a payment link, ALWAYS include the actual URL in your response
-- Format payment links prominently like: "✅ Payment Link: https://buy.stripe.com/..."
-- Show the customer exactly what they can click on
-
-Your personality:
-- Friendly, space-themed, and helpful
-- Use space emojis occasionally (🚀, 🌟, ✨, 🛸, 🌌, 👨‍🚀, 📦)
-- Professional but enthusiastic about space commerce
-
-When handling Stripe operations:
-- For payment links: Show the URL prominently and explain what the customer can do with it
-- For customers: Show the customer ID and confirmation details
-- For products: Show product IDs and what was created
-- For prices: Show pricing details clearly
-- Always confirm what action was completed
-
-You have access to these Stripe tools:
-{tools}
-
-Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
-
-Valid "action" values: "Final Answer" or {tool_names}
-
-Provide only ONE action per $JSON_BLOB, as shown:
-
-\`\`\`
-{{
-  "action": $TOOL_NAME,
-  "action_input": $INPUT
-}}
-\`\`\`
-
-Follow this format:
-
-Question: input question to answer
-Thought: consider previous and subsequent steps
-Action:
-\`\`\`
-$JSON_BLOB
-\`\`\`
-Observation: action result
-... (repeat Thought/Action/Observation N times)
-Thought: I know what to respond
-Action:
-\`\`\`
-{{
-  "action": "Final Answer",
-  "action_input": "Final response to human"
-}}
-\`\`\`
-
-Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:\`\`\`$JSON_BLOB\`\`\`then Observation`],
-      ["human", "{input}"],
-      ["placeholder", "{agent_scratchpad}"]
-    ]);
+    // Use the pre-built structured chat agent prompt from LangChain Hub
+    const prompt = await pull('hwchase17/structured-chat-agent') as any;
 
     // @ts-ignore
     const agent = await createStructuredChatAgent({
@@ -160,10 +102,13 @@ Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use
         input: userMessage,
       });
 
+      // Enhance the response to make payment links more prominent
+      const enhancedOutput = this.enhanceResponseForPaymentLinks(result.output, result);
+
       // Add assistant response to conversation history
       this.conversationHistory.push({
         role: 'assistant',
-        content: result.output,
+        content: enhancedOutput,
         timestamp: new Date(),
       });
 
@@ -174,11 +119,11 @@ Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use
         executionTime,
         success: true,
         toolsUsed: this.extractToolsUsed(result),
-      }, userMessage, result.output);
+      }, userMessage, enhancedOutput);
 
       return {
         success: true,
-        message: result.output,
+        message: enhancedOutput,
         data: {
           executionTime,
           toolsUsed: this.extractToolsUsed(result),
@@ -216,6 +161,53 @@ Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use
       }
     }
     return toolsUsed;
+  }
+
+  private enhanceResponseForPaymentLinks(output: string, result: any): string {
+    // Check if a payment link was created by looking at intermediate steps
+    let paymentLinkUrl: string | null = null;
+    
+    if (result.intermediateSteps) {
+      for (const step of result.intermediateSteps) {
+        if (step.action && step.action.tool === 'create_payment_link' && step.observation) {
+          try {
+            const observation = JSON.parse(step.observation);
+            if (observation.url) {
+              paymentLinkUrl = observation.url;
+              break;
+            }
+          } catch (e) {
+            // If parsing fails, try to extract URL with regex
+            const urlMatch = step.observation.match(/https:\/\/buy\.stripe\.com\/[^\s"]+/);
+            if (urlMatch) {
+              paymentLinkUrl = urlMatch[0];
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // If we found a payment link, enhance the response
+    if (paymentLinkUrl) {
+      const enhancedResponse = `🚀 ${output}
+
+✅ **Payment Link Created Successfully!**
+🔗 **Click here to purchase**: ${paymentLinkUrl}
+
+🌟 Your customers can now click this link to complete their space adventure purchase!`;
+      
+      return enhancedResponse;
+    }
+
+    // For other responses, add space-themed enhancement
+    const spaceEnhanced = output
+      .replace(/customer/gi, '🚀 space explorer')
+      .replace(/product/gi, '🌟 cosmic gadget')
+      .replace(/created/gi, 'launched into orbit')
+      .replace(/successfully/gi, '🛸 successfully');
+
+    return spaceEnhanced;
   }
 
   private async logMetrics(metrics: AgentMetrics, input?: string, output?: string): Promise<void> {
