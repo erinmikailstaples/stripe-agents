@@ -56,15 +56,46 @@
    AGENT_DESCRIPTION=Galileo's Gizmo - An AI agent for ecommerce payments and product management
    ```
 
-3. **Run the demo:**
+3. **Choose your experience:**
 
+   **Option A - Interactive Customer Service (Recommended):**
+   ```bash
+   npm run interactive
+   ```
+   
+   **Option B - Demo with Sample Scenarios:**
    ```bash
    npm run dev
    ```
 
-   🎉 **Success!** You should see the agent processing sample requests and creating real Stripe objects.
+   🎉 **Success!** You should see the agent ready to help with your Stripe operations!
 
 ## 💬 How to Use
+
+### 🤖 Interactive Customer Service Mode
+
+The interactive mode provides a real-time chat experience with Galileo's Gizmos customer service agent:
+
+```bash
+npm run interactive
+```
+
+**Features:**
+- 💬 **Real-time Chat**: Type your requests and get instant responses
+- 🆘 **Built-in Help**: Type `help` for examples and guidance
+- 📊 **Live Monitoring**: Every interaction logged to Galileo in real-time
+- 🔄 **Session Management**: Continuous conversation with context
+- 🛸 **Space-themed Experience**: Immersive Galileo's Gizmos branding
+
+**Example Conversation:**
+```
+🚀 You: Create a payment link for the Mars Explorer Kit at $199
+🌟 Gizmo: I'll create that payment link for you! Setting up the Mars Explorer Kit...
+✅ Payment link created: https://buy.stripe.com/test_abc123
+🔧 Stripe operations: create_product, create_price, create_payment_link
+```
+
+### 📝 Natural Language Examples
 
 Just talk to your agent in natural language! Here are some examples:
 
