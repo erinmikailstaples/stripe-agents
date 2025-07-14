@@ -9,8 +9,9 @@ async function main() {
     console.log(`📈 Log Stream: ${environment_1.env.galileo.logStream}`);
     console.log('---');
     try {
-        // Initialize the agent and Galileo logger
+        // Initialize the agent
         const agent = new StripeAgent_1.StripeAgent();
+        await agent.init(); // Ensure agent is fully initialized
         const galileoLogger = new GalileoLogger_1.GalileoAgentLogger();
         // Start a session for all example interactions
         const sessionId = await galileoLogger.startSession('Stripe Agent Demo Session');

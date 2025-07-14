@@ -17,7 +17,10 @@ class StripeAgent {
         this.galileoLogger = new GalileoLogger_1.GalileoAgentLogger();
         this.initializeStripeToolkit();
         this.initializeLLM();
-        this.initializeAgent();
+        // Removed: this.initializeAgent();
+    }
+    async init() {
+        await this.initializeAgent();
     }
     initializeStripeToolkit() {
         this.stripeToolkit = new langchain_1.StripeAgentToolkit({
@@ -72,6 +75,9 @@ class StripeAgent {
         });
     }
     async processMessage(userMessage) {
+        if (!this.agentExecutor) {
+            throw new Error('Agent is not initialized. Did you forget to call await agent.init()?');
+        }
         const startTime = Date.now();
         try {
             // Add user message to conversation history

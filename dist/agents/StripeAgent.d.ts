@@ -6,6 +6,7 @@ export declare class StripeAgent {
     private conversationHistory;
     private galileoLogger;
     constructor();
+    init(): Promise<void>;
     private initializeStripeToolkit;
     private initializeLLM;
     private initializeAgent;

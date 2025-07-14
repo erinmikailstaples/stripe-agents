@@ -25,7 +25,11 @@ export class StripeAgent {
     this.galileoLogger = new GalileoAgentLogger();
     this.initializeStripeToolkit();
     this.initializeLLM();
-    this.initializeAgent();
+    // Removed: this.initializeAgent();
+  }
+
+  async init() {
+    await this.initializeAgent();
   }
 
   private initializeStripeToolkit(): void {
@@ -87,6 +91,9 @@ export class StripeAgent {
   }
 
   async processMessage(userMessage: string): Promise<AgentResponse> {
+    if (!this.agentExecutor) {
+      throw new Error('Agent is not initialized. Did you forget to call await agent.init()?');
+    }
     const startTime = Date.now();
     
     try {
