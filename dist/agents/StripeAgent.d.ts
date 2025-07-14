@@ -11,6 +11,7 @@ export declare class StripeAgent {
     private initializeAgent;
     processMessage(userMessage: string): Promise<AgentResponse>;
     private extractToolsUsed;
+    private enhanceResponseForPaymentLinks;
     private logMetrics;
     private generateTraceName;
     createPaymentLink(request: PaymentLinkRequest): Promise<AgentResponse>;
