@@ -7,6 +7,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
+    "interactive": "ts-node src/interactive.ts",
+    "customer-service": "ts-node src/interactive.ts",
     "test": "jest"
   },
   "keywords": [

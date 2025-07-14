@@ -17,7 +17,10 @@ class StripeAgent {
         this.galileoLogger = new GalileoLogger_1.GalileoAgentLogger();
         this.initializeStripeToolkit();
         this.initializeLLM();
-        this.initializeAgent();
+        // Removed: this.initializeAgent();
+    }
+    async init() {
+        await this.initializeAgent();
     }
     initializeStripeToolkit() {
         this.stripeToolkit = new langchain_1.StripeAgentToolkit({
@@ -72,6 +75,9 @@ class StripeAgent {
         });
     }
     async processMessage(userMessage) {
+        if (!this.agentExecutor) {
+            throw new Error('Agent is not initialized. Did you forget to call await agent.init()?');
+        }
         const startTime = Date.now();
         try {
             // Add user message to conversation history
@@ -84,10 +90,12 @@ class StripeAgent {
             const result = await this.agentExecutor.invoke({
                 input: userMessage,
             });
+            // Enhance the response to make payment links more prominent
+            const enhancedOutput = this.enhanceResponseForPaymentLinks(result.output, result);
             // Add assistant response to conversation history
             this.conversationHistory.push({
                 role: 'assistant',
-                content: result.output,
+                content: enhancedOutput,
                 timestamp: new Date(),
             });
             const executionTime = Date.now() - startTime;
@@ -96,10 +104,10 @@ class StripeAgent {
                 executionTime,
                 success: true,
                 toolsUsed: this.extractToolsUsed(result),
-            }, userMessage, result.output);
+            }, userMessage, enhancedOutput);
             return {
                 success: true,
-                message: result.output,
+                message: enhancedOutput,
                 data: {
                     executionTime,
                     toolsUsed: this.extractToolsUsed(result),
@@ -135,6 +143,48 @@ class StripeAgent {
             }
         }
         return toolsUsed;
+    }
+    enhanceResponseForPaymentLinks(output, result) {
+        // Check if a payment link was created by looking at intermediate steps
+        let paymentLinkUrl = null;
+        if (result.intermediateSteps) {
+            for (const step of result.intermediateSteps) {
+                if (step.action && step.action.tool === 'create_payment_link' && step.observation) {
+                    try {
+                        const observation = JSON.parse(step.observation);
+                        if (observation.url) {
+                            paymentLinkUrl = observation.url;
+                            break;
+                        }
+                    }
+                    catch (e) {
+                        // If parsing fails, try to extract URL with regex
+                        const urlMatch = step.observation.match(/https:\/\/buy\.stripe\.com\/[^\s"]+/);
+                        if (urlMatch) {
+                            paymentLinkUrl = urlMatch[0];
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // If we found a payment link, enhance the response
+        if (paymentLinkUrl) {
+            const enhancedResponse = `🚀 ${output}
+
+✅ **Payment Link Created Successfully!**
+🔗 **Click here to purchase**: ${paymentLinkUrl}
+
+🌟 Your customers can now click this link to complete their space adventure purchase!`;
+            return enhancedResponse;
+        }
+        // For other responses, add space-themed enhancement
+        const spaceEnhanced = output
+            .replace(/customer/gi, '🚀 space explorer')
+            .replace(/product/gi, '🌟 cosmic gadget')
+            .replace(/created/gi, 'launched into orbit')
+            .replace(/successfully/gi, '🛸 successfully');
+        return spaceEnhanced;
     }
     async logMetrics(metrics, input, output) {
         if (input && output) {

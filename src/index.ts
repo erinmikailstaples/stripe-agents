@@ -9,8 +9,9 @@ async function main() {
   console.log('---');
 
   try {
-    // Initialize the agent and Galileo logger
+    // Initialize the agent
     const agent = new StripeAgent();
+    await agent.init(); // Ensure agent is fully initialized
     const galileoLogger = new GalileoAgentLogger();
 
     // Start a session for all example interactions

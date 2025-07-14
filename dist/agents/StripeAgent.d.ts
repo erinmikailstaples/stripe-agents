@@ -6,11 +6,13 @@ export declare class StripeAgent {
     private conversationHistory;
     private galileoLogger;
     constructor();
+    init(): Promise<void>;
     private initializeStripeToolkit;
     private initializeLLM;
     private initializeAgent;
     processMessage(userMessage: string): Promise<AgentResponse>;
     private extractToolsUsed;
+    private enhanceResponseForPaymentLinks;
     private logMetrics;
     private generateTraceName;
     createPaymentLink(request: PaymentLinkRequest): Promise<AgentResponse>;
