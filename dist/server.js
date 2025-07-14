@@ -1,0 +1,165 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.app = void 0;
+const express_1 = __importDefault(require("express"));
+const path_1 = __importDefault(require("path"));
+const cors_1 = __importDefault(require("cors"));
+const StripeAgent_1 = require("./agents/StripeAgent");
+const GalileoLogger_1 = require("./utils/GalileoLogger");
+const environment_1 = require("./config/environment");
+const app = (0, express_1.default)();
+exports.app = app;
+const PORT = process.env.PORT || 3000;
+// Middleware
+app.use((0, cors_1.default)());
+app.use(express_1.default.json());
+app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
+// Initialize agent and logger
+const agent = new StripeAgent_1.StripeAgent();
+const galileoLogger = new GalileoLogger_1.GalileoAgentLogger();
+// Store active sessions
+const activeSessions = new Map();
+// API Routes
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { message, sessionId } = req.body;
+        if (!message || typeof message !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid message format'
+            });
+        }
+        // Start new session if needed
+        let currentSessionId = sessionId;
+        if (!currentSessionId || !activeSessions.has(currentSessionId)) {
+            currentSessionId = `web-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const galileoSessionId = await galileoLogger.startSession('Galileo Gizmos Web Chat Session');
+            activeSessions.set(currentSessionId, galileoSessionId);
+        }
+        // Process the message
+        const response = await agent.processMessage(message);
+        // Log to console for debugging
+        console.log(`[${new Date().toISOString()}] User: ${message}`);
+        console.log(`[${new Date().toISOString()}] Gizmo: ${response.message}`);
+        if (response.data?.toolsUsed && response.data.toolsUsed.length > 0) {
+            console.log(`[${new Date().toISOString()}] Tools: ${response.data.toolsUsed.join(', ')}`);
+        }
+        res.json({
+            ...response,
+            sessionId: currentSessionId
+        });
+    }
+    catch (error) {
+        console.error('Chat API error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Houston, we have a problem! Please try again.',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+// Get conversation history
+app.get('/api/conversation/:sessionId', async (req, res) => {
+    try {
+        const conversationHistory = agent.getConversationHistory();
+        res.json({
+            success: true,
+            conversation: conversationHistory
+        });
+    }
+    catch (error) {
+        console.error('Conversation API error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve conversation history'
+        });
+    }
+});
+// Clear conversation history
+app.delete('/api/conversation/:sessionId', async (req, res) => {
+    try {
+        agent.clearConversationHistory();
+        res.json({
+            success: true,
+            message: 'Conversation history cleared'
+        });
+    }
+    catch (error) {
+        console.error('Clear conversation API error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to clear conversation history'
+        });
+    }
+});
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        service: 'Galileo Gizmos Space Commerce Assistant',
+        version: '1.0.0'
+    });
+});
+// Get agent capabilities
+app.get('/api/capabilities', (req, res) => {
+    res.json({
+        success: true,
+        capabilities: {
+            tools: [
+                'create_payment_link',
+                'create_customer',
+                'create_product',
+                'create_price',
+                'list_customers',
+                'list_products',
+                'create_invoice',
+                'finalize_invoice'
+            ],
+            features: [
+                'Natural language processing',
+                'Stripe API integration',
+                'Galileo monitoring',
+                'Space-themed responses',
+                'Conversation history',
+                'Real-time tool usage tracking'
+            ]
+        }
+    });
+});
+// Serve the frontend
+app.get('/', (req, res) => {
+    res.sendFile(path_1.default.join(__dirname, '../public/index.html'));
+});
+// Handle session cleanup on shutdown
+process.on('SIGINT', async () => {
+    console.log('\n🚀 Shutting down Galileo Gizmos server...');
+    // Conclude all active sessions
+    for (const [webSessionId, galileoSessionId] of activeSessions) {
+        try {
+            // Log final conversation
+            const conversationHistory = agent.getConversationHistory();
+            await galileoLogger.logConversation(conversationHistory);
+            await galileoLogger.concludeSession();
+            console.log(`✅ Session ${webSessionId} concluded successfully`);
+        }
+        catch (error) {
+            console.error(`❌ Error concluding session ${webSessionId}:`, error);
+        }
+    }
+    console.log('🌟 Galileo Gizmos server shutdown complete');
+    process.exit(0);
+});
+// Start the server
+app.listen(PORT, () => {
+    console.log('🚀 Galileo\'s Gizmos Space Commerce HQ is online!');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`🌟 Server running on http://localhost:${PORT}`);
+    console.log(`📊 Galileo Project: ${environment_1.env.galileo.projectName}`);
+    console.log(`🛸 Ready to process interstellar commerce requests!`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+});
+//# sourceMappingURL=server.js.map

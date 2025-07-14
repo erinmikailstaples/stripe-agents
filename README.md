@@ -58,12 +58,18 @@
 
 3. **Choose your experience:**
 
-   **Option A - Interactive Customer Service (Recommended):**
+   **Option A - Web Interface (Recommended):**
+   ```bash
+   npm run web
+   ```
+   Then visit `http://localhost:3000` for the space-themed chat interface!
+   
+   **Option B - Interactive CLI:**
    ```bash
    npm run interactive
    ```
    
-   **Option B - Demo with Sample Scenarios:**
+   **Option C - Demo with Sample Scenarios:**
    ```bash
    npm run dev
    ```
@@ -72,9 +78,27 @@
 
 ## 💬 How to Use
 
-### 🤖 Interactive Customer Service Mode
+### 🌐 Web Interface (Recommended)
 
-The interactive mode provides a real-time chat experience with Galileo's Gizmos customer service agent:
+The web interface provides a beautiful space-themed chat experience:
+
+```bash
+npm run web
+# Visit http://localhost:3000
+```
+
+**Features:**
+- 🚀 **Space-themed UI**: Immersive cosmic design with animations
+- 💬 **Real-time Chat**: Beautiful chat interface with message formatting
+- 🛠️ **Quick Tools**: Sidebar buttons for common operations
+- ✨ **Examples**: Click-to-use example requests
+- 📊 **Live Monitoring**: Every interaction logged to Galileo
+- 🔄 **Session Management**: Persistent conversation context
+- 🛸 **Gizmo Assistant**: Space-themed AI personality
+
+### 🤖 Interactive CLI Mode
+
+The CLI mode provides a real-time terminal chat experience:
 
 ```bash
 npm run interactive
