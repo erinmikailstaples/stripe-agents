@@ -8,6 +8,7 @@ import { z } from 'zod';
 import Stripe from 'stripe';
 import { env } from '../config/environment';
 import { GalileoAgentLogger } from '../utils/GalileoLogger';
+import { CircularToolError } from '../errors/CircularToolError';
 import { 
   AgentMessage, 
   AgentResponse, 
@@ -166,7 +167,7 @@ REMEMBER: Customer trust depends on only offering real products that exist!
       agent,
       tools,
       verbose: true,
-      maxIterations: 6, // Increased to allow complex operations like price calculations
+      maxIterations: 4, // Lowered to prevent runaway loops
       returnIntermediateSteps: true, // This helps with error handling
     });
   }
@@ -201,7 +202,12 @@ REMEMBER: Customer trust depends on only offering real products that exist!
       const result = await this.agentExecutor.invoke({
         input: userMessage,
         chat_history: conversationContext,
+      }, {
+        timeout: 20000, // 20 seconds timeout
       });
+      
+      // Check for circular tool usage after execution
+      this.detectCircularToolUsage(result.intermediateSteps);
       
       // Add temporary console.trace after every intermediate step for debugging
       if (result.intermediateSteps && result.intermediateSteps.length > 0) {
@@ -245,6 +251,28 @@ REMEMBER: Customer trust depends on only offering real products that exist!
     } catch (error) {
       const executionTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Handle circular tool error with a graceful message
+      if (error instanceof CircularToolError) {
+        console.error('🔄 CircularToolError caught:', error.message);
+        
+        await this.logTraceToGalileo({
+          executionTime,
+          success: false,
+          toolsUsed: [],
+          errorType: 'CircularToolError',
+        }, userMessage, error.message);
+        
+        return {
+          success: false,
+          message: 'I seem to be stuck in a loop trying to process your request. Let me try a different approach. Could you please rephrase your question or try asking for something else?',
+          error: error.message,
+          data: {
+            sessionId: this.sessionId,
+            toolPattern: error.toolPattern,
+          },
+        };
+      }
       
       // Log error trace to Galileo
       await this.logTraceToGalileo({
@@ -461,7 +489,43 @@ Is there anything else I can help you with today?`;
     // Do NOT trigger feedback for longer negative responses
     const isLongNegativeResponse = lowerInput.length > 20 && (lowerInput.includes('cannot') || lowerInput.includes('help me'));
     
-    return (hasStrongClosing || isDismissive || hasSimpleClosingAtEnd) && !isLongNegativeResponse;
+      return (hasStrongClosing || isDismissive || hasSimpleClosingAtEnd) && !isLongNegativeResponse;
+  }
+
+  /**
+   * Detects circular tool usage patterns in intermediate steps
+   * Keeps a sliding window of the last 3 tool calls and checks for repeated patterns
+   */
+  private detectCircularToolUsage(intermediateSteps: any[]): void {
+    if (!intermediateSteps || intermediateSteps.length < 4) {
+      return; // Need at least 4 steps to detect a 2-tool cycle repeated twice
+    }
+
+    // Extract tool names from the last 4 steps
+    const recentTools = intermediateSteps
+      .slice(-4)
+      .map(step => step.action?.tool)
+      .filter(tool => tool); // Filter out undefined/null
+
+    if (recentTools.length < 4) {
+      return;
+    }
+
+    // Check if we have a two-tool pattern that repeats
+    const [tool1, tool2, tool3, tool4] = recentTools;
+    
+    if (tool1 === tool3 && tool2 === tool4 && tool1 !== tool2) {
+      const pattern = [tool1, tool2];
+      const errorMessage = `Circular tool invocation detected: ${pattern.join(' -> ')} pattern repeated twice. This suggests the agent is stuck in a loop.`;
+      
+      console.error('🔄 Circular tool usage detected:', {
+        pattern,
+        recentTools,
+        totalSteps: intermediateSteps.length
+      });
+      
+      throw new CircularToolError(errorMessage, pattern);
+    }
   }
 
   // Convenience methods for common operations

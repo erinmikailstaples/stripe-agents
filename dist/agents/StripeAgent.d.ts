@@ -21,6 +21,11 @@ export declare class StripeAgent {
     private generateTraceName;
     private detectPurchaseIntent;
     private shouldPromptForFeedback;
+    /**
+     * Detects circular tool usage patterns in intermediate steps
+     * Keeps a sliding window of the last 3 tool calls and checks for repeated patterns
+     */
+    private detectCircularToolUsage;
     createPaymentLink(request: PaymentLinkRequest): Promise<AgentResponse>;
     createCustomer(request: CustomerRequest): Promise<AgentResponse>;
     getConversationHistory(): AgentMessage[];
