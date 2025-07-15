@@ -305,10 +305,11 @@ REMEMBER: Customer trust depends on only offering real products that exist!
 
   private cleanAndFormatResponse(output: string, result: any, userInput?: string): string {
     let paymentLinkUrl: string | null = null;
+    let usedAtomicTool = false;
     
     if (result.intermediateSteps) {
       for (const step of result.intermediateSteps) {
-        // Check for payment link creation
+        // Check for payment link creation from traditional tool
         if (step.action && step.action.tool === 'create_payment_link' && step.observation) {
           try {
             const observation = JSON.parse(step.observation);
@@ -317,6 +318,22 @@ REMEMBER: Customer trust depends on only offering real products that exist!
             }
           } catch (e) {
             const urlMatch = step.observation.match(/https:\/\/buy\.stripe\.com\/[^\s"]+/);
+            if (urlMatch) {
+              paymentLinkUrl = urlMatch[0];
+            }
+          }
+        }
+        
+        // Check for payment link creation from atomic helper tool
+        if (step.action && step.action.tool === 'get_price_and_create_payment_link' && step.observation) {
+          usedAtomicTool = true;
+          // The atomic tool returns the URL directly as a string
+          const observation = step.observation.trim();
+          if (observation.startsWith('https://buy.stripe.com/')) {
+            paymentLinkUrl = observation;
+          } else {
+            // Fallback: try to extract URL from the observation
+            const urlMatch = observation.match(/https:\/\/buy\.stripe\.com\/[^\s"]+/);
             if (urlMatch) {
               paymentLinkUrl = urlMatch[0];
             }
@@ -359,14 +376,22 @@ REMEMBER: Customer trust depends on only offering real products that exist!
     
     // If we found a payment link, enhance the response
     if (paymentLinkUrl) {
-      cleanOutput = `✅ **Perfect! I've created your payment link.**
+      // Check if the assistant's output already contains a properly formatted response
+      const alreadyFormattedResponse = cleanOutput.includes('✅') && cleanOutput.includes('Perfect!');
+      
+      if (!alreadyFormattedResponse) {
+        // Force-inject the perfect boilerplate to prevent raw JSON from being shown
+        cleanOutput = `✅ **Perfect! I've created your payment link.**
 
 🔗 **Click here to complete your purchase:**
 ${paymentLinkUrl}
 
-💫 Once you complete your payment, you're all set! 
-
-Is there anything else I can help you with today?`;
+💫 Once you complete your payment, you're all set!`;
+        // Suppress follow-up question if the atomic tool was used
+        if (!usedAtomicTool) {
+          cleanOutput += '\n\nIs there anything else I can help you with today?';
+        }
+      }
     } else {
       // For other responses, ensure proper formatting
       cleanOutput = cleanOutput
