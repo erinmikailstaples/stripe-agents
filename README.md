@@ -427,6 +427,33 @@ src/
 - **[`environment.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/config/environment.ts)** - Configuration management for API keys and settings
 - **[`types/index.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/types/index.ts)** - TypeScript type definitions for type safety
 
+## 🗺️ Application Flow Diagram
+
+Below is a simplified architecture diagram showing the main flow of your app. **Galileo** is highlighted as the monitoring and analytics layer, capturing every action, error, and user satisfaction event for observability and reliability:
+
+```mermaid
+flowchart TD
+  A["User (Web/CLI)"]
+  B["StripeAgent"]
+  C["StripeAgentToolkit"]
+  D["Stripe API"]
+  E["GalileoAgentLogger"]
+  F["Galileo Platform (Monitoring & Analytics)"]
+
+  A -- "Sends request (e.g. 'Create payment link')" --> B
+  B -- "Understands & orchestrates" --> C
+  C -- "Calls Stripe API" --> D
+  D -- "Returns Stripe result" --> C
+  C -- "Result (e.g. payment link)" --> B
+  B -- "Responds to user" --> A
+
+  B -- "Logs actions, errors, metrics" --> E
+  E -- "Sends traces, logs, satisfaction" --> F
+
+  classDef galileo fill:#ffe4b5,stroke:#333,stroke-width:2px;
+  class E,F galileo;
+```
+
 ## ⚙️ Configuration
 
 ### Customizing Stripe Operations

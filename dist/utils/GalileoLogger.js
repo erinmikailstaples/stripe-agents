@@ -20,6 +20,11 @@ class GalileoAgentLogger {
      * Start a session for grouping multiple traces
      */
     async startSession(sessionName) {
+        // Prevent creating multiple sessions
+        if (this.sessionId) {
+            console.log(`⚠️  Session already exists: ${this.sessionId}, reusing it`);
+            return this.sessionId;
+        }
         const sessionPrefix = sessionName ? sessionName.replace(/\s+/g, '-').toLowerCase() : 'stripe-agent-session';
         this.sessionId = `${sessionPrefix}-${Date.now()}-${Math.random().toString(36).substring(2)}`;
         console.log(`📊 Generated session ID: ${this.sessionId} (${sessionName || 'Default Session'})`);
@@ -28,13 +33,20 @@ class GalileoAgentLogger {
     /**
      * Log a single agent execution following the proper Galileo pattern
      */
-    async logAgentExecution(metrics, userInput, agentOutput, traceName, metadata) {
+    async logAgentExecution(metrics, userInput, agentOutput, traceName, metadata, intermediateSteps) {
         try {
             const finalTraceName = traceName || this.generateTraceName(userInput);
             // Start a new trace with user input as input, agent output as output
+            // Include sessionId if available to group traces under one session
             this.logger.startTrace({
                 input: userInput, // What the user typed
-                name: finalTraceName
+                name: finalTraceName,
+                metadata: this.sessionId ? {
+                    sessionId: this.sessionId,
+                    toolsUsed: metrics.toolsUsed?.join(', ') || 'none',
+                    executionTime: String(metrics.executionTime || 0),
+                    success: String(metrics.success)
+                } : undefined
             });
             this.currentTraceActive = true;
             // Get timing for the LLM call
@@ -49,9 +61,39 @@ class GalileoAgentLogger {
                 numOutputTokens: undefined,
                 totalTokens: undefined,
                 durationNs: metrics.executionTime ? metrics.executionTime * 1000000 : undefined,
+                metadata: {
+                    sessionId: this.sessionId || 'no-session',
+                    executionTime: String(metrics.executionTime || 0),
+                    success: String(metrics.success),
+                    ...metadata
+                }
             });
-            // Add tool spans for each Stripe operation
-            if (metrics.toolsUsed && metrics.toolsUsed.length > 0) {
+            // Add detailed tool spans for each Stripe operation with actual inputs/outputs
+            if (intermediateSteps && intermediateSteps.length > 0) {
+                intermediateSteps.forEach((step, index) => {
+                    if (step.action && step.action.tool) {
+                        const toolInput = step.action.toolInput || step.action.tool_input || {};
+                        const toolOutput = step.observation || 'No output available';
+                        this.logger.addToolSpan({
+                            input: JSON.stringify(toolInput, null, 2),
+                            output: typeof toolOutput === 'string' ? toolOutput : JSON.stringify(toolOutput, null, 2),
+                            name: `Stripe ${step.action.tool}`,
+                            durationNs: undefined,
+                            metadata: {
+                                toolName: step.action.tool,
+                                stepNumber: String(index + 1),
+                                toolType: 'stripe-api',
+                                sessionId: this.sessionId || 'no-session',
+                                rawInput: JSON.stringify(toolInput),
+                                rawOutput: typeof toolOutput === 'string' ? toolOutput : JSON.stringify(toolOutput)
+                            },
+                            tags: ['stripe', 'tool', 'api', step.action.tool],
+                        });
+                    }
+                });
+            }
+            else if (metrics.toolsUsed && metrics.toolsUsed.length > 0) {
+                // Fallback for when intermediateSteps aren't available
                 metrics.toolsUsed.forEach((tool, index) => {
                     this.logger.addToolSpan({
                         input: `Stripe ${tool} operation requested`,
@@ -61,7 +103,8 @@ class GalileoAgentLogger {
                         metadata: {
                             toolName: tool,
                             stepNumber: String(index + 1),
-                            toolType: 'stripe-api'
+                            toolType: 'stripe-api',
+                            sessionId: this.sessionId || 'no-session'
                         },
                         tags: ['stripe', 'tool', 'api'],
                     });
@@ -135,6 +178,53 @@ class GalileoAgentLogger {
             return msg;
         }
         return String(msg);
+    }
+    /**
+     * Log user satisfaction feedback
+     */
+    async logSatisfaction(satisfaction) {
+        try {
+            console.log(`📊 Logging satisfaction in session: ${this.sessionId}`);
+            if (this.currentTraceActive) {
+                // Add satisfaction as metadata to the current trace
+                await this.logger.addLlmSpan({
+                    input: "User satisfaction feedback requested",
+                    output: `User satisfaction: ${satisfaction ? 'satisfied' : 'not satisfied'}`,
+                    name: "Satisfaction Review",
+                    model: "satisfaction-tool",
+                    durationNs: 0,
+                    numInputTokens: 0,
+                    numOutputTokens: 0,
+                    totalTokens: 0,
+                    metadata: {
+                        satisfaction_score: satisfaction ? '1.0' : '0.0',
+                        feedback_type: 'thumbs_up_down',
+                        session_conclusion: 'true',
+                        sessionId: this.sessionId || 'no-session'
+                    }
+                });
+            }
+            else {
+                console.log(`⚠️  No active trace for satisfaction logging in session: ${this.sessionId}`);
+            }
+            console.log(`📊 User satisfaction logged: ${satisfaction ? '👍' : '👎'} (Session: ${this.sessionId})`);
+        }
+        catch (error) {
+            console.error('Failed to log satisfaction:', error);
+        }
+    }
+    /**
+     * Flush all traces to ensure they're sent to Galileo
+     */
+    async flushAllTraces() {
+        try {
+            console.log('📊 Flushing all traces to Galileo...');
+            await this.logger.flush();
+            console.log('✅ All traces flushed successfully');
+        }
+        catch (error) {
+            console.error('Failed to flush traces:', error);
+        }
     }
     /**
      * Conclude the current session

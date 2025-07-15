@@ -3,6 +3,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { AgentExecutor, createStructuredChatAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { pull } from 'langchain/hub';
+import { DynamicTool } from '@langchain/core/tools';
 import { env } from '../config/environment';
 import { GalileoAgentLogger } from '../utils/GalileoLogger';
 import { 
@@ -20,6 +21,8 @@ export class StripeAgent {
   private agentExecutor!: AgentExecutor;
   private conversationHistory: AgentMessage[] = [];
   private galileoLogger: GalileoAgentLogger;
+  private sessionId: string | null = null;
+  private sessionActive: boolean = false;
 
   constructor() {
     this.galileoLogger = new GalileoAgentLogger();
@@ -70,11 +73,65 @@ export class StripeAgent {
     });
   }
 
+
+
+
+
   private async initializeAgent(): Promise<void> {
-    const tools = this.stripeToolkit.getTools();
+    const stripeTools = this.stripeToolkit.getTools();
+    const tools = [...stripeTools];
     
     // Use the pre-built structured chat agent prompt from LangChain Hub
     const prompt = await pull('hwchase17/structured-chat-agent') as any;
+    
+    // Add custom instructions for better tool usage
+    const customInstructions = `
+CRITICAL: ONLY OFFER REAL PRODUCTS FROM STRIPE INVENTORY
+
+INVENTORY RULES:
+- ALWAYS use list_products to check actual inventory before suggesting products
+- NEVER suggest fictional, made-up, or non-existent products
+- ONLY offer products that actually exist in your Stripe account
+- If a user asks for something not in inventory, check list_products first, then explain what's actually available
+
+SESSION CONCLUSION RULES:
+- When customer indicates they are done (says "thanks", "nope", "that's all", etc.), conclude the conversation politely
+- Do NOT continue asking "Is there anything else I can help you with?" after customer indicates they're done
+- Session should end naturally when customer signals completion
+
+STRIPE WORKFLOW FOR PAYMENT LINKS:
+The create_payment_link tool requires a PRICE ID, not product information directly.
+Correct workflow:
+1. User wants to buy something → Use list_products to show REAL available options
+2. User chooses a product → Use list_prices to find the price ID for that product
+3. Once you have a price ID → Use create_payment_link with {"price": "price_id", "quantity": number}
+
+NEVER try to create payment links without first getting a valid price ID from list_prices.
+
+For product inquiries:
+- ALWAYS use list_products to show what's actually available
+- NEVER suggest products that don't exist in your inventory
+- If user wants to buy, get the price ID first from actual inventory
+- Only then create the payment link
+
+For complex calculations (like "how many X can I buy for $Y"):
+1. Get product info with list_products
+2. Get price info with list_prices
+3. Calculate quantity (divide budget by unit price)
+4. Create payment link with calculated quantity
+
+Example flow:
+1. "What do you offer?" → list_products (shows REAL inventory)
+2. "I want the telescope" → list_prices (filter by telescope product IF it exists)
+3. Got price ID → create_payment_link with that price ID
+
+REMEMBER: Customer trust depends on only offering real products that exist!
+`;
+
+    // Prepend custom instructions to the original prompt
+    if (prompt.template) {
+      prompt.template = customInstructions + '\n\n' + prompt.template;
+    }
 
     // @ts-ignore
     const agent = await createStructuredChatAgent({
@@ -87,7 +144,7 @@ export class StripeAgent {
       agent,
       tools,
       verbose: true,
-      maxIterations: 5, // Reduced from 10 to be more efficient
+      maxIterations: 6, // Increased to allow complex operations like price calculations
       returnIntermediateSteps: true, // This helps with error handling
     });
   }
@@ -99,6 +156,15 @@ export class StripeAgent {
     const startTime = Date.now();
     
     try {
+      // Start Galileo session if not already active
+      if (!this.sessionActive) {
+        this.sessionId = await this.startGalileoSession("Galileo's Gizmos Customer Session");
+        this.sessionActive = true;
+      }
+      
+      // Ensure session consistency throughout the conversation
+      console.log(`📝 Processing message in session: ${this.sessionId}`);
+
       // Add user message to conversation history
       this.conversationHistory.push({
         role: 'user',
@@ -106,44 +172,60 @@ export class StripeAgent {
         timestamp: new Date(),
       });
 
-      // Process the message with the agent - let LangChain handle agent_scratchpad
+      // Build conversation context for better memory
+      const conversationContext = this.buildConversationContext();
+
+      // Process the message with the agent including conversation history
       const result = await this.agentExecutor.invoke({
         input: userMessage,
+        chat_history: conversationContext,
       });
+      
+      // Add temporary console.trace after every intermediate step for debugging
+      if (result.intermediateSteps && result.intermediateSteps.length > 0) {
+        console.log('🔍 INTERMEDIATE STEPS DEBUGGING:');
+        result.intermediateSteps.forEach((step: any, index: number) => {
+          console.log(`\n--- Step ${index + 1} ---`);
+          console.log('Action:', step.action);
+          console.log('Observation:', step.observation);
+          console.trace(`🚨 Step ${index + 1} stack trace:`);
+        });
+      }
 
-      // Enhance the response to make payment links more prominent
-      const enhancedOutput = this.enhanceResponseForPaymentLinks(result.output, result);
+      // Clean up and format the response
+      const cleanOutput = this.cleanAndFormatResponse(result.output, result, userMessage);
 
       // Add assistant response to conversation history
       this.conversationHistory.push({
         role: 'assistant',
-        content: enhancedOutput,
+        content: cleanOutput,
         timestamp: new Date(),
       });
 
       const executionTime = Date.now() - startTime;
       
-      // Log metrics to Galileo
-      await this.logMetrics({
+      // Log to Galileo as a trace in the ongoing session
+      await this.logTraceToGalileo({
         executionTime,
         success: true,
         toolsUsed: this.extractToolsUsed(result),
-      }, userMessage, enhancedOutput);
+      }, userMessage, cleanOutput);
 
       return {
         success: true,
-        message: enhancedOutput,
+        message: cleanOutput,
         data: {
           executionTime,
           toolsUsed: this.extractToolsUsed(result),
+          sessionId: this.sessionId,
         },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      // Log error metrics to Galileo
-      await this.logMetrics({
+      // Log error trace to Galileo
+      await this.logTraceToGalileo({
         executionTime,
         success: false,
         toolsUsed: [],
@@ -154,13 +236,108 @@ export class StripeAgent {
         success: false,
         message: 'I encountered an error while processing your request. Please try again.',
         error: errorMessage,
+        data: {
+          sessionId: this.sessionId,
+        },
       };
     }
   }
 
+  private buildConversationContext(): string {
+    if (this.conversationHistory.length === 0) return '';
+    
+    // Build context from recent conversation history (last 6 messages)
+    const recentHistory = this.conversationHistory.slice(-6);
+    return recentHistory
+      .map(msg => `${msg.role === 'user' ? 'Human' : 'Assistant'}: ${msg.content}`)
+      .join('\n');
+  }
+
+  private cleanAndFormatResponse(output: string, result: any, userInput?: string): string {
+    let paymentLinkUrl: string | null = null;
+    
+    if (result.intermediateSteps) {
+      for (const step of result.intermediateSteps) {
+        // Check for payment link creation
+        if (step.action && step.action.tool === 'create_payment_link' && step.observation) {
+          try {
+            const observation = JSON.parse(step.observation);
+            if (observation.url) {
+              paymentLinkUrl = observation.url;
+            }
+          } catch (e) {
+            const urlMatch = step.observation.match(/https:\/\/buy\.stripe\.com\/[^\s"]+/);
+            if (urlMatch) {
+              paymentLinkUrl = urlMatch[0];
+            }
+          }
+        }
+
+        // Clean up product listing responses to remove duplicates
+        if (step.action && step.action.tool === 'list_products' && step.observation) {
+          try {
+            const products = JSON.parse(step.observation);
+            if (Array.isArray(products)) {
+              const deduplicated = this.deduplicateProducts(products);
+              // Store the cleaned products for better response formatting
+              (step as any).cleanedProducts = deduplicated;
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+      }
+    }
+
+    // Clean up the output and format properly
+    let cleanOutput = output.trim();
+    
+    // Check if user indicates they're done - conclude session naturally
+    if (userInput && this.shouldPromptForFeedback(userInput)) {
+      console.log("🏁 User indicated they're done - concluding session naturally");
+      
+      // Log neutral satisfaction and conclude session
+      this.galileoLogger.logSatisfaction(true);
+      this.galileoLogger.flushAllTraces();
+      
+      if (this.sessionActive) {
+        this.concludeGalileoSession();
+      }
+      
+      return "🌟 Thank you for choosing Galileo's Gizmos! We're glad we could help you today.\n\n🚀 Your session is now complete!";
+    }
+    
+    // If we found a payment link, enhance the response
+    if (paymentLinkUrl) {
+      cleanOutput = `✅ **Perfect! I've created your payment link.**
+
+🔗 **Click here to complete your purchase:**
+${paymentLinkUrl}
+
+💫 Once you complete your payment, you're all set! 
+
+Is there anything else I can help you with today?`;
+    } else {
+      // For other responses, ensure proper formatting
+      cleanOutput = cleanOutput
+        .replace(/\n\n+/g, '\n\n') // Normalize line breaks
+        .replace(/^\s+|\s+$/g, ''); // Trim whitespace
+      
+      // Check if user input indicates purchase intent
+      if (userInput && this.detectPurchaseIntent(userInput)) {
+        cleanOutput += '\n\n🛒 **Ready to make a purchase?** I can help you create a payment link! Let me first check what products are actually available in our inventory and then I can create a payment link for you.';
+      }
+      
+      // Add standard follow-up if no special conditions
+      if (!cleanOutput.includes('?') && !cleanOutput.toLowerCase().includes('help')) {
+        cleanOutput += '\n\nIs there anything else I can help you with?';
+      }
+    }
+
+    return cleanOutput;
+  }
+
   private extractToolsUsed(result: any): string[] {
-    // Extract tool names from the agent execution result
-    // This is a simplified implementation
     const toolsUsed: string[] = [];
     if (result.intermediateSteps) {
       for (const step of result.intermediateSteps) {
@@ -172,59 +349,29 @@ export class StripeAgent {
     return toolsUsed;
   }
 
-  private enhanceResponseForPaymentLinks(output: string, result: any): string {
-    // Check if a payment link was created by looking at intermediate steps
-    let paymentLinkUrl: string | null = null;
-    
-    if (result.intermediateSteps) {
-      for (const step of result.intermediateSteps) {
-        if (step.action && step.action.tool === 'create_payment_link' && step.observation) {
-          try {
-            const observation = JSON.parse(step.observation);
-            if (observation.url) {
-              paymentLinkUrl = observation.url;
-              break;
-            }
-          } catch (e) {
-            // If parsing fails, try to extract URL with regex
-            const urlMatch = step.observation.match(/https:\/\/buy\.stripe\.com\/[^\s"]+/);
-            if (urlMatch) {
-              paymentLinkUrl = urlMatch[0];
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    // If we found a payment link, enhance the response
-    if (paymentLinkUrl) {
-      const enhancedResponse = `🚀 ${output}
-
-✅ **Payment Link Created Successfully!**
-🔗 **Click here to purchase**: ${paymentLinkUrl}
-
-🌟 Your customers can now click this link to complete their space adventure purchase!`;
-      
-      return enhancedResponse;
-    }
-
-    // For other responses, add space-themed enhancement
-    const spaceEnhanced = output
-      .replace(/customer/gi, '🚀 space explorer')
-      .replace(/product/gi, '🌟 cosmic gadget')
-      .replace(/created/gi, 'launched into orbit')
-      .replace(/successfully/gi, '🛸 successfully');
-
-    return spaceEnhanced;
-  }
-
-  private async logMetrics(metrics: AgentMetrics, input?: string, output?: string): Promise<void> {
+  private async logTraceToGalileo(metrics: AgentMetrics, input?: string, output?: string): Promise<void> {
     if (input && output) {
       // Generate a descriptive trace name based on the input
       const traceName = this.generateTraceName(input);
       await this.galileoLogger.logAgentExecution(metrics, input, output, traceName);
     }
+  }
+
+  private deduplicateProducts(products: any[]): any[] {
+    const seen = new Set<string>();
+    const deduplicated: any[] = [];
+    
+    // Keep the most recent version of each product name
+    const sortedProducts = products.sort((a, b) => b.created - a.created);
+    
+    for (const product of sortedProducts) {
+      if (!seen.has(product.name)) {
+        seen.add(product.name);
+        deduplicated.push(product);
+      }
+    }
+    
+    return deduplicated;
   }
 
   private generateTraceName(input: string): string {
@@ -248,6 +395,53 @@ export class StripeAgent {
     }
   }
 
+  private detectPurchaseIntent(input: string): boolean {
+    const lowerInput = input.toLowerCase();
+    const purchaseKeywords = [
+      'buy', 'purchase', 'order', 'payment', 'pay', 'checkout',
+      'want to buy', 'would like to buy', 'interested in buying',
+      'ready to purchase', 'ready to buy', 'i want', 'i need',
+      'add to cart', 'get this', 'take this'
+    ];
+    
+    return purchaseKeywords.some(keyword => lowerInput.includes(keyword));
+  }
+
+  private shouldPromptForFeedback(input: string): boolean {
+    const lowerInput = input.toLowerCase().trim();
+    
+    // More specific closing patterns that indicate conversation is ending
+    const strongClosingPatterns = [
+      'thank you', 'thanks', 'that\'s all', 'that\'s it', 'all set',
+      'i\'m done', 'i\'m all set', 'goodbye', 'bye', 'see you later',
+      'talk to you later', 'have a good day', 'have a great day'
+    ];
+    
+    // Simple closing words that need to be at the end or standalone
+    const simpleClosingWords = ['done', 'finished', 'perfect', 'great', 'awesome'];
+    
+    // ONLY these specific dismissive responses should trigger feedback
+    const dismissiveResponses = ['nope', 'nope!', 'no', 'nah'];
+    
+    // Check for strong closing patterns anywhere in the input
+    const hasStrongClosing = strongClosingPatterns.some(pattern => lowerInput.includes(pattern));
+    
+    // Check for dismissive responses (exact matches ONLY)
+    const isDismissive = dismissiveResponses.some(response => lowerInput === response);
+    
+    // Check for simple closing words only if they're at the end or standalone
+    const hasSimpleClosingAtEnd = simpleClosingWords.some(word => {
+      const words = lowerInput.split(/\s+/);
+      const lastWords = words.slice(-2).join(' '); // Last two words
+      return lastWords === word || lastWords.endsWith(` ${word}`) || words.length === 1 && words[0] === word;
+    });
+    
+    // Do NOT trigger feedback for longer negative responses
+    const isLongNegativeResponse = lowerInput.length > 20 && (lowerInput.includes('cannot') || lowerInput.includes('help me'));
+    
+    return (hasStrongClosing || isDismissive || hasSimpleClosingAtEnd) && !isLongNegativeResponse;
+  }
+
   // Convenience methods for common operations
   async createPaymentLink(request: PaymentLinkRequest): Promise<AgentResponse> {
     const message = `Create a payment link for "${request.productName}" with amount ${request.amount} ${request.currency.toUpperCase()}`;
@@ -268,7 +462,10 @@ export class StripeAgent {
   }
 
   async startGalileoSession(sessionName: string): Promise<string> {
-    return await this.galileoLogger.startSession(sessionName);
+    const sessionId = await this.galileoLogger.startSession(sessionName);
+    this.sessionActive = true;
+    console.log(`🚀 Started Galileo session: ${sessionId}`);
+    return sessionId;
   }
 
   async logConversationToGalileo(): Promise<void> {
@@ -276,6 +473,20 @@ export class StripeAgent {
   }
 
   async concludeGalileoSession(): Promise<void> {
-    await this.galileoLogger.concludeSession();
+    if (this.sessionActive) {
+      console.log(`🏁 Concluding Galileo session: ${this.sessionId}`);
+      await this.galileoLogger.concludeSession();
+      this.sessionActive = false;
+      this.sessionId = null;
+      console.log('✅ Galileo session concluded successfully');
+    }
+  }
+
+  // Add method to get session status
+  getSessionStatus(): { active: boolean; sessionId: string | null } {
+    return {
+      active: this.sessionActive,
+      sessionId: this.sessionId,
+    };
   }
 }

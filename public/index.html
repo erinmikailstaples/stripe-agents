@@ -374,6 +374,44 @@
             transform: translateX(2px);
         }
 
+        .resource-button,
+        .resource-link {
+            display: block;
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-secondary);
+            border-radius: 10px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .resource-link {
+            text-decoration: none;
+        }
+
+        .resource-button:hover,
+        .resource-link:hover {
+            background: rgba(107, 70, 193, 0.3);
+            transform: translateX(5px);
+            box-shadow: var(--glow-purple);
+        }
+
+        .resource-button:focus,
+        .resource-link:focus {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        .resource-button:active,
+        .resource-link:active {
+            transform: translateX(2px);
+        }
+
         .quick-examples {
             margin-top: 20px;
         }
@@ -588,85 +626,72 @@
             </div>
             
             <nav class="sidebar" role="complementary" aria-label="Quick tools">
-                <h3>🛠️ Quick Tools</h3>
+                <h3>📚 Resources</h3>
                 
                 <button 
-                    class="tool-button" 
-                    data-tool="payment-link"
-                    aria-label="Create payment link tool"
+                    class="resource-button" 
+                    data-resource="about"
+                    aria-label="Learn about Galileo space commerce platform"
                 >
-                    💳 Create Payment Link
+                    🛰️ About Galileo
                 </button>
                 
-                <button 
-                    class="tool-button" 
-                    data-tool="customer"
-                    aria-label="Add customer tool"
+                <a 
+                    class="resource-link" 
+                    href="https://github.com/stripe/stripe-agent-toolkit" 
+                    target="_blank" 
+                    rel="noopener"
+                    aria-label="Visit Stripe Agent Toolkit repository on GitHub"
                 >
-                    👨‍🚀 Add Customer
-                </button>
+                    🛠️ Stripe Agent Toolkit
+                </a>
                 
                 <button 
-                    class="tool-button" 
-                    data-tool="product"
-                    aria-label="Create product tool"
+                    class="resource-button" 
+                    data-resource="tutorial"
+                    aria-label="View tutorial for using Galileo's Gizmos"
                 >
-                    🌟 Create Product
+                    🎓 View Tutorial
                 </button>
                 
-                <button 
-                    class="tool-button" 
-                    data-tool="list-products"
-                    aria-label="List products tool"
+                <a 
+                    class="resource-link" 
+                    href="https://github.com/stripe/stripe-sdk" 
+                    target="_blank" 
+                    rel="noopener"
+                    aria-label="Follow Stripe SDK repository on GitHub"
                 >
-                    📦 List Products
-                </button>
-                
-                <button 
-                    class="tool-button" 
-                    data-tool="invoice"
-                    aria-label="Create invoice tool"
-                >
-                    📄 Create Invoice
-                </button>
+                    ⭐ Follow SDK Repository
+                </a>
                 
                 <div class="quick-examples">
                     <h3>✨ Quick Examples</h3>
                     
                     <button 
                         class="example-item" 
-                        data-example="Create a payment link for the Quantum Telescope Kit for $299"
-                        aria-label="Example: Create a payment link for the Quantum Telescope Kit for $299"
+                        data-example="Create payment link"
+                        aria-label="Example: Create payment link"
                         type="button"
                     >
-                        🔭 Telescope Kit Payment
+                        💳 Create payment link
                     </button>
                     
                     <button 
                         class="example-item" 
-                        data-example="Add customer Captain Nebula with email captain@starfleet.com"
-                        aria-label="Example: Add customer Captain Nebula with email captain@starfleet.com"
+                        data-example="What's for sale?"
+                        aria-label="Example: Ask what's for sale"
                         type="button"
                     >
-                        👨‍🚀 Add Space Captain
+                        🛒 Ask what's for sale
                     </button>
                     
                     <button 
                         class="example-item" 
-                        data-example="Show me our current space product catalog"
-                        aria-label="Example: Show me our current space product catalog"
+                        data-example="Create a Lunar Rover rental plan for $999"
+                        aria-label="Example: Create a Lunar Rover rental plan for $999"
                         type="button"
                     >
-                        📦 View Products
-                    </button>
-                    
-                    <button 
-                        class="example-item" 
-                        data-example="Create a monthly Space Explorer Box subscription for $49.99"
-                        aria-label="Example: Create a monthly Space Explorer Box subscription for $49.99"
-                        type="button"
-                    >
-                        🎁 Monthly Box
+                        🌙 Create a Lunar Rover rental plan for $999
                     </button>
                 </div>
             </nav>

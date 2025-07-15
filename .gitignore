@@ -7,6 +7,9 @@ venv
 .venv
 node_modules
 
-misc
-
+#misc
+cookbook
+test-galileo-fixed.js
+test-improved-satisfaction.js
+test
 

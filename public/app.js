@@ -45,6 +45,11 @@ class GalileoGizmosChat {
             item.addEventListener('click', () => this.sendExampleMessage(item.dataset.example));
         });
         
+        // Resource buttons
+        document.querySelectorAll('.resource-button').forEach(btn => {
+            btn.addEventListener('click', () => this.handleResourceClick(btn.dataset.resource));
+        });
+        
         // Floating gizmo easter egg
         this.floatingGizmo.addEventListener('click', () => this.showGizmoMessage());
         
@@ -263,6 +268,14 @@ class GalileoGizmosChat {
         if (prompt) {
             this.messageInput.value = prompt;
             this.messageInput.focus();
+        }
+    }
+    
+    handleResourceClick(resource) {
+        if (resource === 'about') {
+            this.addMessage('system', '🛸 Welcome to Galileo Gizmos! We\'re your premier destination for cutting-edge space commerce solutions. From interstellar payment processing to cosmic customer management, we\'ve got all the tools you need to launch your business into the stars! 🌟');
+        } else if (resource === 'tutorial') {
+            this.addMessage('system', '🎓 Ready to master space commerce? Our interactive tutorial will guide you through creating payment links, managing customers, and processing interstellar transactions. Type "Start tutorial" or ask me "How do I create a payment link?" to begin your cosmic journey! 🚀');
         }
     }
 

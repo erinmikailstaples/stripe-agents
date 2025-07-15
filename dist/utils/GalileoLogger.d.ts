@@ -14,7 +14,7 @@ export declare class GalileoAgentLogger {
     /**
      * Log a single agent execution following the proper Galileo pattern
      */
-    logAgentExecution(metrics: AgentMetrics, userInput: string, agentOutput: string, traceName?: string, metadata?: Record<string, any>): Promise<void>;
+    logAgentExecution(metrics: AgentMetrics, userInput: string, agentOutput: string, traceName?: string, metadata?: Record<string, any>, intermediateSteps?: any[]): Promise<void>;
     /**
      * Generate a meaningful trace name from user input
      */
@@ -27,6 +27,14 @@ export declare class GalileoAgentLogger {
      * Extract message content safely
      */
     private extractMessageContent;
+    /**
+     * Log user satisfaction feedback
+     */
+    logSatisfaction(satisfaction: boolean): Promise<void>;
+    /**
+     * Flush all traces to ensure they're sent to Galileo
+     */
+    flushAllTraces(): Promise<void>;
     /**
      * Conclude the current session
      */
