@@ -1,10 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StripeAgent = void 0;
 const langchain_1 = require("@stripe/agent-toolkit/langchain");
 const openai_1 = require("@langchain/openai");
 const agents_1 = require("langchain/agents");
 const hub_1 = require("langchain/hub");
+const tools_1 = require("@langchain/core/tools");
+const stripe_1 = __importDefault(require("stripe"));
 const environment_1 = require("../config/environment");
 const GalileoLogger_1 = require("../utils/GalileoLogger");
 class StripeAgent {
@@ -61,8 +66,30 @@ class StripeAgent {
         });
     }
     async initializeAgent() {
+        // Initialize Stripe client for the atomic tool
+        const stripe = new stripe_1.default(environment_1.env.stripe.secretKey, {
+            apiVersion: '2025-02-24.acacia',
+        });
+        // Create atomic helper tool for getting price and creating payment link
+        const getPriceAndCreateLink = new tools_1.DynamicTool({
+            name: 'get_price_and_create_payment_link',
+            description: 'Provide product name and quantity; returns ready-to-share Stripe payment link URL',
+            func: async (input) => {
+                const params = JSON.parse(input);
+                const { product_name, quantity } = params;
+                const products = await stripe.products.list({ limit: 100 });
+                const product = products.data.find(p => p.name.toLowerCase() === product_name.toLowerCase());
+                if (!product)
+                    throw new Error('Product not found');
+                const prices = await stripe.prices.list({ product: product.id, active: true });
+                if (!prices.data.length)
+                    throw new Error('No active price');
+                const link = await stripe.paymentLinks.create({ line_items: [{ price: prices.data[0].id, quantity }] });
+                return link.url;
+            },
+        });
         const stripeTools = this.stripeToolkit.getTools();
-        const tools = [...stripeTools];
+        const tools = [getPriceAndCreateLink, ...stripeTools];
         // Use the pre-built structured chat agent prompt from LangChain Hub
         const prompt = await (0, hub_1.pull)('hwchase17/structured-chat-agent');
         // Add custom instructions for better tool usage
@@ -81,30 +108,28 @@ SESSION CONCLUSION RULES:
 - Session should end naturally when customer signals completion
 
 STRIPE WORKFLOW FOR PAYMENT LINKS:
-The create_payment_link tool requires a PRICE ID, not product information directly.
-Correct workflow:
-1. User wants to buy something → Use list_products to show REAL available options
-2. User chooses a product → Use list_prices to find the price ID for that product
-3. Once you have a price ID → Use create_payment_link with {"price": "price_id", "quantity": number}
+When user is ready to purchase, call 'get_price_and_create_payment_link' instead of manually chaining list_products + list_prices + create_payment_link.
 
-NEVER try to create payment links without first getting a valid price ID from list_prices.
+The get_price_and_create_payment_link tool is atomic and handles:
+1. Finding the product by name
+2. Getting the active price for that product
+3. Creating the payment link with the specified quantity
+4. Returning the ready-to-share URL
 
 For product inquiries:
 - ALWAYS use list_products to show what's actually available
 - NEVER suggest products that don't exist in your inventory
-- If user wants to buy, get the price ID first from actual inventory
-- Only then create the payment link
+- When user wants to buy, use get_price_and_create_payment_link directly
 
 For complex calculations (like "how many X can I buy for $Y"):
 1. Get product info with list_products
 2. Get price info with list_prices
 3. Calculate quantity (divide budget by unit price)
-4. Create payment link with calculated quantity
+4. Use get_price_and_create_payment_link with calculated quantity
 
 Example flow:
 1. "What do you offer?" → list_products (shows REAL inventory)
-2. "I want the telescope" → list_prices (filter by telescope product IF it exists)
-3. Got price ID → create_payment_link with that price ID
+2. "I want the telescope" → get_price_and_create_payment_link with product_name and quantity
 
 REMEMBER: Customer trust depends on only offering real products that exist!
 `;
