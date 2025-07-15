@@ -8,7 +8,6 @@ const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const cors_1 = __importDefault(require("cors"));
 const StripeAgent_1 = require("./agents/StripeAgent");
-const GalileoLogger_1 = require("./utils/GalileoLogger");
 const environment_1 = require("./config/environment");
 const app = (0, express_1.default)();
 exports.app = app;
@@ -17,10 +16,7 @@ const PORT = process.env.PORT || 3000;
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
-// Initialize agent and logger
-const agent = new StripeAgent_1.StripeAgent();
-const galileoLogger = new GalileoLogger_1.GalileoAgentLogger();
-// Store active sessions
+// Store active sessions (web sessionId -> agent instance)
 const activeSessions = new Map();
 // API Routes
 app.post('/api/chat', async (req, res) => {
@@ -34,10 +30,16 @@ app.post('/api/chat', async (req, res) => {
         }
         // Start new session if needed
         let currentSessionId = sessionId;
+        let agent;
         if (!currentSessionId || !activeSessions.has(currentSessionId)) {
             currentSessionId = `web-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const galileoSessionId = await galileoLogger.startSession('Galileo Gizmos Web Chat Session');
-            activeSessions.set(currentSessionId, galileoSessionId);
+            agent = new StripeAgent_1.StripeAgent();
+            await agent.init();
+            await agent.startGalileoSession('Galileo Gizmos Web Chat Session');
+            activeSessions.set(currentSessionId, agent);
+        }
+        else {
+            agent = activeSessions.get(currentSessionId);
         }
         // Process the message
         const response = await agent.processMessage(message);
@@ -64,6 +66,14 @@ app.post('/api/chat', async (req, res) => {
 // Get conversation history
 app.get('/api/conversation/:sessionId', async (req, res) => {
     try {
+        const { sessionId } = req.params;
+        const agent = activeSessions.get(sessionId);
+        if (!agent) {
+            return res.status(404).json({
+                success: false,
+                message: 'Session not found'
+            });
+        }
         const conversationHistory = agent.getConversationHistory();
         res.json({
             success: true,
@@ -81,6 +91,14 @@ app.get('/api/conversation/:sessionId', async (req, res) => {
 // Clear conversation history
 app.delete('/api/conversation/:sessionId', async (req, res) => {
     try {
+        const { sessionId } = req.params;
+        const agent = activeSessions.get(sessionId);
+        if (!agent) {
+            return res.status(404).json({
+                success: false,
+                message: 'Session not found'
+            });
+        }
         agent.clearConversationHistory();
         res.json({
             success: true,
@@ -138,12 +156,11 @@ app.get('/', (req, res) => {
 process.on('SIGINT', async () => {
     console.log('\n🚀 Shutting down Galileo Gizmos server...');
     // Conclude all active sessions
-    for (const [webSessionId, galileoSessionId] of activeSessions) {
+    for (const [webSessionId, agent] of activeSessions) {
         try {
             // Log final conversation
-            const conversationHistory = agent.getConversationHistory();
-            await galileoLogger.logConversation(conversationHistory);
-            await galileoLogger.concludeSession();
+            await agent.logConversationToGalileo();
+            await agent.concludeGalileoSession();
             console.log(`✅ Session ${webSessionId} concluded successfully`);
         }
         catch (error) {

@@ -512,6 +512,59 @@ const llm = new ChatOpenAI({
 3. See [SETUP.md](file:///Users/erinmikail/GitHub-Local/stripe-agents/SETUP.md) for detailed setup instructions
 4. Check [Stripe Agent documentation](https://github.com/stripe/agent-toolkit) 
 
+## 🛠️ Development Status & Key Components
+
+### Current Status
+The Galileo integration is functioning correctly with proper separation of user input and AI output in logs. All components are working together for accurate monitoring and logging.
+
+### Key Files & Their Purpose
+
+#### Core Application Files
+- **[`src/utils/GalileoLogger.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/utils/GalileoLogger.ts)** - Core Galileo logging implementation
+  - `logAgentExecution` - Logs user input and agent output separately
+  - `addLlmSpan` - Tracks AI model interactions with distinct inputs/outputs
+  - `addToolSpan` - Logs Stripe API operations with detailed request/response data
+  - `startTrace`, `conclude`, `flush` - Session management methods
+
+- **[`src/agents/StripeAgent.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/agents/StripeAgent.ts)** - Main agent orchestration
+  - `processMessage` - Handles user requests and coordinates Stripe operations
+  - `logAgentExecution` - Integration point with GalileoLogger
+  - `startGalileoSession`, `logConversationToGalileo`, `concludeGalileoSession` - Session lifecycle
+
+- **[`src/server.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/server.ts)** - Web server backend
+  - `/api/chat` endpoint - Manages web sessions and agent processing
+  - Session management - Creates isolated StripeAgent instances per session
+  - Shutdown handler - Ensures proper Galileo session conclusion
+
+#### Testing & Verification
+- **`test-galileo-fixed.js`** - Galileo integration test script
+  - Verifies input/output separation in logs
+  - Tests session creation and conclusion
+  - Confirms proper trace logging to Galileo dashboard
+
+### Essential Commands
+
+#### Running the Application
+- **`npm run web`** - Start web interface at http://localhost:3000
+- **`npm run interactive`** - Start CLI interface for terminal interaction
+- **`npm run dev`** - Run demo with sample scenarios
+
+#### Testing & Verification
+- **`node test-galileo-fixed.js`** - Test Galileo logging functionality
+- **`npm run build`** - Build for production deployment
+- **`npm run start`** - Start production server
+
+### Verification Steps
+1. **Check Galileo Dashboard** - Verify traces show distinct user inputs and agent outputs
+2. **Test Web Interface** - Ensure sessionId handling and UI updates work correctly
+3. **Test CLI Interface** - Confirm real-time logging and conversation context
+4. **Monitor Logs** - Verify proper separation of input/output in Galileo traces
+
+### Next Steps for Enhancement
+- **Granular Logging** - Add more detailed Stripe API request/response logging in `addToolSpan` method
+- **Frontend Integration** - Ensure `callAgent` method properly handles sessionId and connection status
+- **Error Tracking** - Enhanced error context logging for better debugging
+
 ## 📚 Learn More
 
 - **[Stripe Agent Toolkit](https://github.com/stripe/agent-toolkit)** - Official Stripe agent tools

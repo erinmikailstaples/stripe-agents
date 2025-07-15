@@ -5,27 +5,35 @@ class GalileoGizmosChat {
         this.sendBtn = document.getElementById('sendBtn');
         this.loading = document.getElementById('loading');
         this.floatingGizmo = document.getElementById('floatingGizmo');
+        this.themeToggle = document.getElementById('themeToggle');
         
         this.isProcessing = false;
         this.conversation = [];
         this.sessionId = null;
+        this.currentTheme = localStorage.getItem('theme') || 'dark';
         
+        this.initializeTheme();
         this.initializeEventListeners();
         this.generateStars();
         this.initializeWebSocket();
     }
 
     initializeEventListeners() {
-        // Send message on button click
-        this.sendBtn.addEventListener('click', () => this.sendMessage());
-        
-        // Send message on Enter key
-        this.messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendMessage();
-            }
+        // Form submission
+        const inputForm = document.querySelector('.input-area');
+        inputForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.sendMessage();
         });
+        
+        // Send message on button click (backup)
+        this.sendBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.sendMessage();
+        });
+        
+        // Theme toggle
+        this.themeToggle.addEventListener('click', () => this.toggleTheme());
         
         // Tool buttons
         document.querySelectorAll('.tool-button').forEach(btn => {
@@ -39,6 +47,15 @@ class GalileoGizmosChat {
         
         // Floating gizmo easter egg
         this.floatingGizmo.addEventListener('click', () => this.showGizmoMessage());
+        
+        // Keyboard navigation for chat messages
+        this.chatMessages.addEventListener('keydown', (e) => {
+            if (e.key === 'Home') {
+                this.chatMessages.scrollTop = 0;
+            } else if (e.key === 'End') {
+                this.scrollToBottom();
+            }
+        });
     }
 
     generateStars() {
@@ -55,6 +72,55 @@ class GalileoGizmosChat {
             star.style.animationDelay = Math.random() * 3 + 's';
             stars.appendChild(star);
         }
+    }
+
+    initializeTheme() {
+        document.documentElement.setAttribute('data-theme', this.currentTheme);
+        this.updateThemeToggle();
+    }
+
+    toggleTheme() {
+        this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', this.currentTheme);
+        localStorage.setItem('theme', this.currentTheme);
+        this.updateThemeToggle();
+        
+        // Announce theme change to screen readers
+        const announcement = `Theme switched to ${this.currentTheme} mode`;
+        this.announceToScreenReader(announcement);
+    }
+
+    updateThemeToggle() {
+        const icon = this.themeToggle.querySelector('.theme-icon');
+        const text = this.themeToggle.querySelector('.theme-text');
+        
+        if (this.currentTheme === 'dark') {
+            icon.textContent = '🌙';
+            text.textContent = 'Dark';
+            this.themeToggle.setAttribute('aria-pressed', 'false');
+            this.themeToggle.setAttribute('aria-label', 'Switch to light theme');
+        } else {
+            icon.textContent = '☀️';
+            text.textContent = 'Light';
+            this.themeToggle.setAttribute('aria-pressed', 'true');
+            this.themeToggle.setAttribute('aria-label', 'Switch to dark theme');
+        }
+    }
+
+    announceToScreenReader(message) {
+        const announcement = document.createElement('div');
+        announcement.setAttribute('aria-live', 'polite');
+        announcement.setAttribute('aria-atomic', 'true');
+        announcement.className = 'sr-only';
+        announcement.style.position = 'absolute';
+        announcement.style.left = '-10000px';
+        announcement.style.width = '1px';
+        announcement.style.height = '1px';
+        announcement.style.overflow = 'hidden';
+        announcement.textContent = message;
+        
+        document.body.appendChild(announcement);
+        setTimeout(() => document.body.removeChild(announcement), 1000);
     }
 
     initializeWebSocket() {
@@ -75,7 +141,7 @@ class GalileoGizmosChat {
             const response = await this.callAgent(message);
             this.addMessage('assistant', response.message, response.data);
         } catch (error) {
-            this.addMessage('assistant', `🚨 Houston, we have a problem! ${error.message}`, null, true);
+            this.addDisconnectMessage(error.message);
         } finally {
             this.setProcessing(false);
         }
@@ -95,7 +161,7 @@ class GalileoGizmosChat {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to communicate with Gizmo');
+                throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
@@ -105,35 +171,45 @@ class GalileoGizmosChat {
                 this.sessionId = data.sessionId;
             }
             
+            // Update connection status
+            this.updateConnectionStatus(true);
+            
             return data;
         } catch (error) {
-            // Fallback to mock if backend is not available
-            console.warn('Backend not available, using mock responses');
-            return await this.getMockResponse(message);
+            // Update connection status
+            this.updateConnectionStatus(false);
+            
+            // Throw error to be handled by the caller
+            throw new Error(`Backend Connection Failed: ${error.message}`);
         }
     }
 
     addMessage(role, content, data = null, isError = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${role}`;
+        messageDiv.setAttribute('role', role === 'system' ? 'status' : 'log');
         
         if (isError) {
             messageDiv.style.borderColor = 'var(--space-red)';
             messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+            messageDiv.setAttribute('aria-label', 'Error message');
+        } else {
+            const speaker = role === 'user' ? 'You' : role === 'system' ? 'System' : 'Gizmo';
+            messageDiv.setAttribute('aria-label', `Message from ${speaker}`);
         }
         
         const timestamp = new Date().toLocaleTimeString();
         
         let messageHTML = `
             <div class="message-content">${this.formatMessage(content, role)}</div>
-            <div class="message-meta">
-                ${role === 'user' ? '🚀 You' : '🛸 Gizmo'} • ${timestamp}
+            <div class="message-meta" aria-label="Message timestamp">
+                ${role === 'user' ? '🚀 You' : role === 'system' ? '🌟 System' : '🛸 Gizmo'} • ${timestamp}
             </div>
         `;
         
         if (data && data.toolsUsed && data.toolsUsed.length > 0) {
             messageHTML += `
-                <div class="tool-usage">
+                <div class="tool-usage" aria-label="Tools used in this response">
                     🔧 Tools Used: ${data.toolsUsed.join(', ')} • ⏱️ ${data.executionTime}ms
                 </div>
             `;
@@ -142,6 +218,11 @@ class GalileoGizmosChat {
         messageDiv.innerHTML = messageHTML;
         this.chatMessages.appendChild(messageDiv);
         this.scrollToBottom();
+        
+        // Announce new messages to screen readers
+        if (role === 'assistant') {
+            this.announceToScreenReader(`New message from Gizmo: ${content.substring(0, 100)}${content.length > 100 ? '...' : ''}`);
+        }
         
         // Add to conversation history
         this.conversation.push({ role, content, timestamp: new Date(), data });
@@ -214,101 +295,110 @@ class GalileoGizmosChat {
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
     }
 
-    async getMockResponse(message) {
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    addDisconnectMessage(errorMessage) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message disconnect';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+        messageDiv.style.borderColor = 'var(--space-red)';
+        messageDiv.style.border = '2px solid var(--space-red)';
+        messageDiv.style.textAlign = 'center';
+        messageDiv.style.maxWidth = '90%';
+        messageDiv.style.margin = '0 auto';
         
-        // Mock responses based on message content
-        const lowerMessage = message.toLowerCase();
+        const timestamp = new Date().toLocaleTimeString();
         
-        if (lowerMessage.includes('payment link')) {
-            return {
-                success: true,
-                message: `🚀 Payment link created successfully! I've set up your space commerce portal:
+        messageDiv.innerHTML = `
+            <div class="disconnect-content">
+                <div style="font-size: 2em; margin-bottom: 10px;">🚨</div>
+                <div style="font-weight: bold; color: var(--space-red); margin-bottom: 10px;">
+                    BACKEND CONNECTION LOST
+                </div>
+                <div style="margin-bottom: 10px;">
+                    ${errorMessage}
+                </div>
+                <div style="font-size: 0.9em; opacity: 0.8;">
+                    🔧 Check that the backend server is running with: <code>npm run web</code>
+                </div>
+                <button 
+                    class="retry-btn" 
+                    onclick="location.reload()" 
+                    style="
+                        background: var(--space-red);
+                        border: none;
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        margin-top: 15px;
+                        font-family: 'Space Mono', monospace;
+                    "
+                >
+                    🔄 Retry Connection
+                </button>
+            </div>
+            <div class="message-meta">
+                ⚠️ System Error • ${timestamp}
+            </div>
+        `;
+        
+        this.chatMessages.appendChild(messageDiv);
+        this.scrollToBottom();
+    }
 
-✅ **Payment Link Created Successfully!**
-🔗 **Click here to purchase**: https://buy.stripe.com/test_mock_${Date.now()}
+    updateConnectionStatus(isConnected) {
+        const statusIndicator = document.querySelector('.status-indicator');
+        if (statusIndicator) {
+            if (isConnected) {
+                statusIndicator.style.background = 'rgba(16, 185, 129, 0.3)';
+                statusIndicator.style.borderColor = 'var(--space-green)';
+                statusIndicator.title = 'Connected to Galileo Gizmos Backend';
+                statusIndicator.style.animation = 'pulse 2s infinite';
+                
+                // Enable input when connected
+                this.messageInput.disabled = false;
+                this.sendBtn.disabled = false;
+                this.messageInput.placeholder = 'Ask me anything about your space commerce needs...';
+            } else {
+                statusIndicator.style.background = 'rgba(239, 68, 68, 0.3)';
+                statusIndicator.style.borderColor = 'var(--space-red)';
+                statusIndicator.title = 'Disconnected from Backend';
+                statusIndicator.style.animation = 'pulse-error 1s infinite';
+                
+                // Disable input when disconnected
+                this.messageInput.disabled = true;
+                this.sendBtn.disabled = true;
+                this.messageInput.placeholder = 'Backend connection required - please start the server...';
+            }
+        }
+    }
 
-🌟 Your customers can now click this link to complete their space adventure purchase!`,
-                data: {
-                    executionTime: 1500 + Math.random() * 1000,
-                    toolsUsed: ['create_product', 'create_price', 'create_payment_link']
-                }
-            };
-        } else if (lowerMessage.includes('customer')) {
-            return {
-                success: true,
-                message: `👨‍🚀 Space explorer added to our cosmic registry!
-
-✅ **Customer Created Successfully!**
-🆔 Customer ID: cus_mock_${Date.now()}
-📧 Email: Registered in our space database
-🌟 Status: Ready for interstellar missions!`,
-                data: {
-                    executionTime: 800 + Math.random() * 500,
-                    toolsUsed: ['create_customer']
-                }
-            };
-        } else if (lowerMessage.includes('product')) {
-            return {
-                success: true,
-                message: `🌟 Cosmic gadget launched into our product catalog!
-
-✅ **Product Created Successfully!**
-🛸 Product ID: prod_mock_${Date.now()}
-🚀 Status: Ready for space commerce
-🌌 Now available in Galileo's Gizmos store!`,
-                data: {
-                    executionTime: 1200 + Math.random() * 800,
-                    toolsUsed: ['create_product']
-                }
-            };
-        } else if (lowerMessage.includes('catalog') || lowerMessage.includes('list')) {
-            return {
-                success: true,
-                message: `📦 Here's your cosmic product catalog:
-
-🔭 **Quantum Telescope Kit** - $299.99
-🚀 **Mars Explorer Package** - $1,999.99
-🌟 **Nebula Navigation System** - $599.99
-🛸 **Zero-G Training Module** - $799.99
-⭐ **Cosmic Discovery Box** - $49.99/month
-
-🌌 All products are ready for interstellar shipping!`,
-                data: {
-                    executionTime: 600 + Math.random() * 400,
-                    toolsUsed: ['list_products']
-                }
-            };
-        } else {
-            return {
-                success: true,
-                message: `🛸 I'm Gizmo, your space commerce assistant! I can help you with:
-
-💳 **Payment Links** - Create checkout links for space products
-👨‍🚀 **Customer Management** - Add space explorers to your registry  
-🌟 **Product Catalog** - Manage your cosmic inventory
-📄 **Invoicing** - Generate bills for space missions
-🔄 **Subscriptions** - Set up recurring space deliveries
-
-🚀 Try asking me something like "Create a payment link for the Mars Explorer Kit"!`,
-                data: {
-                    executionTime: 400 + Math.random() * 200,
-                    toolsUsed: []
-                }
-            };
+    async checkBackendHealth() {
+        try {
+            const response = await fetch('/api/health');
+            return response.ok;
+        } catch (error) {
+            return false;
         }
     }
 }
 
 // Initialize the chat interface
-document.addEventListener('DOMContentLoaded', () => {
-    // Use the main chat interface (with backend fallback to mock)
+document.addEventListener('DOMContentLoaded', async () => {
+    // Use the main chat interface (with backend connection checking)
     const chat = new GalileoGizmosChat();
     
-    // Add some startup animation
+    // Check backend health on startup
+    const isBackendHealthy = await chat.checkBackendHealth();
+    
+    // Add startup message based on connection status
     setTimeout(() => {
-        chat.addMessage('system', '🌟 Galileo\'s Gizmos systems online! All space commerce tools ready.');
+        if (isBackendHealthy) {
+            chat.addMessage('system', '🌟 Galileo\'s Gizmos systems online! All space commerce tools ready.');
+            chat.updateConnectionStatus(true);
+        } else {
+            chat.addMessage('system', '⚠️ Backend connection unavailable. Please ensure the server is running with `npm run web`.');
+            chat.updateConnectionStatus(false);
+        }
     }, 1000);
 });
 

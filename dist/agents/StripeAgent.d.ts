@@ -19,5 +19,8 @@ export declare class StripeAgent {
     createCustomer(request: CustomerRequest): Promise<AgentResponse>;
     getConversationHistory(): AgentMessage[];
     clearConversationHistory(): void;
+    startGalileoSession(sessionName: string): Promise<string>;
+    logConversationToGalileo(): Promise<void>;
+    concludeGalileoSession(): Promise<void>;
 }
 //# sourceMappingURL=StripeAgent.d.ts.map

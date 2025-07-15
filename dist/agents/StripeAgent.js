@@ -17,7 +17,6 @@ class StripeAgent {
         this.galileoLogger = new GalileoLogger_1.GalileoAgentLogger();
         this.initializeStripeToolkit();
         this.initializeLLM();
-        // Removed: this.initializeAgent();
     }
     async init() {
         await this.initializeAgent();
@@ -55,6 +54,8 @@ class StripeAgent {
             openAIApiKey: environment_1.env.openai.apiKey,
             modelName: 'gpt-4o-mini',
             temperature: 0.1,
+            maxRetries: 3,
+            timeout: 30000, // 30 second timeout
         });
     }
     async initializeAgent() {
@@ -71,7 +72,8 @@ class StripeAgent {
             agent,
             tools,
             verbose: true,
-            maxIterations: 10,
+            maxIterations: 5, // Reduced from 10 to be more efficient
+            returnIntermediateSteps: true, // This helps with error handling
         });
     }
     async processMessage(userMessage) {
@@ -232,6 +234,15 @@ class StripeAgent {
     }
     clearConversationHistory() {
         this.conversationHistory = [];
+    }
+    async startGalileoSession(sessionName) {
+        return await this.galileoLogger.startSession(sessionName);
+    }
+    async logConversationToGalileo() {
+        await this.galileoLogger.logConversation(this.conversationHistory);
+    }
+    async concludeGalileoSession() {
+        await this.galileoLogger.concludeSession();
     }
 }
 exports.StripeAgent = StripeAgent;
