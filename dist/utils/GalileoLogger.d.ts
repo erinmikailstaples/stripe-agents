@@ -14,7 +14,14 @@ export declare class GalileoAgentLogger {
     /**
      * Log a single agent execution following the proper Galileo pattern
      */
-    logAgentExecution(metrics: AgentMetrics, userInput: string, agentOutput: string, traceName?: string, metadata?: Record<string, any>, intermediateSteps?: any[]): Promise<void>;
+    logAgentExecution(metrics: AgentMetrics, userInput: string, agentOutput: string, traceName?: string, metadata?: Record<string, unknown>, intermediateSteps?: Array<{
+        action?: {
+            tool?: string;
+            toolInput?: unknown;
+            tool_input?: unknown;
+        };
+        observation?: unknown;
+    }>): Promise<void>;
     /**
      * Generate a meaningful trace name from user input
      */

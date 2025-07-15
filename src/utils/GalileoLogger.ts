@@ -14,7 +14,7 @@ export class GalileoAgentLogger {
     this.logger = new GalileoLogger({
       projectName: env.galileo.projectName,
       logStreamName: env.galileo.logStream,
-    } as any);
+    });
   }
 
   /**
@@ -41,8 +41,8 @@ export class GalileoAgentLogger {
     userInput: string,
     agentOutput: string,
     traceName?: string,
-    metadata?: Record<string, any>,
-    intermediateSteps?: any[]
+    metadata?: Record<string, unknown>,
+    intermediateSteps?: Array<{ action?: { tool?: string; toolInput?: unknown; tool_input?: unknown }; observation?: unknown }>
   ): Promise<void> {
     try {
       const finalTraceName = traceName || this.generateTraceName(userInput);
@@ -184,21 +184,28 @@ export class GalileoAgentLogger {
   /**
    * Extract message content safely
    */
-  private extractMessageContent(msg: any): string {
+  private extractMessageContent(msg: unknown): string {
     if (!msg) return '';
-    
-    if (typeof msg.content === 'string') {
-      return msg.content;
-    }
-    
-    if (msg.content && typeof msg.content === 'object') {
-      if (msg.content.text) return String(msg.content.text);
-      if (msg.content.content) return String(msg.content.content);
-      return JSON.stringify(msg.content);
-    }
     
     if (typeof msg === 'string') {
       return msg;
+    }
+    
+    if (typeof msg === 'object' && msg !== null) {
+      const messageObj = msg as Record<string, unknown>;
+      
+      if (typeof messageObj.content === 'string') {
+        return messageObj.content;
+      }
+      
+      if (messageObj.content && typeof messageObj.content === 'object') {
+        const content = messageObj.content as Record<string, unknown>;
+        if (typeof content.text === 'string') return content.text;
+        if (typeof content.content === 'string') return content.content;
+        return JSON.stringify(content);
+      }
+      
+      return JSON.stringify(messageObj);
     }
     
     return String(msg);

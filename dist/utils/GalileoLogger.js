@@ -164,18 +164,23 @@ class GalileoAgentLogger {
     extractMessageContent(msg) {
         if (!msg)
             return '';
-        if (typeof msg.content === 'string') {
-            return msg.content;
-        }
-        if (msg.content && typeof msg.content === 'object') {
-            if (msg.content.text)
-                return String(msg.content.text);
-            if (msg.content.content)
-                return String(msg.content.content);
-            return JSON.stringify(msg.content);
-        }
         if (typeof msg === 'string') {
             return msg;
+        }
+        if (typeof msg === 'object' && msg !== null) {
+            const messageObj = msg;
+            if (typeof messageObj.content === 'string') {
+                return messageObj.content;
+            }
+            if (messageObj.content && typeof messageObj.content === 'object') {
+                const content = messageObj.content;
+                if (typeof content.text === 'string')
+                    return content.text;
+                if (typeof content.content === 'string')
+                    return content.content;
+                return JSON.stringify(content);
+            }
+            return JSON.stringify(messageObj);
         }
         return String(msg);
     }
