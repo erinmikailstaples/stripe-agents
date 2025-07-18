@@ -12,6 +12,51 @@
 - 🔒 **TypeScript**: Fully typed for reliability and great developer experience
 - 🚀 **Production Ready**: Error handling, monitoring, and logging built-in
 
+## 🚀 Recent Updates
+
+### v2.0 - Enhanced Reliability & Performance
+
+- ✅ **Anti-Loop Protection**: New atomic helper tool prevents LLM from getting stuck in loops
+- 🔄 **Cycle Detection**: Automatic detection and recovery from circular tool usage patterns
+- 📝 **TypeScript Improvements**: Enhanced type safety and cleaner compilation
+- 🧪 **Comprehensive Testing**: Full test suite covering loop prevention and error handling
+
+### 🔧 Upgrade Instructions
+
+If you're upgrading from v1.x:
+
+1. **Pull the latest changes:**
+   ```bash
+   git pull origin main
+   npm install
+   ```
+
+2. **New Helper Tool Contract:**
+   The new `get_price_and_create_payment_link` atomic tool replaces the manual chain of `list_products` → `list_prices` → `create_payment_link` calls:
+   
+   ```typescript
+   // OLD: Multiple tool calls (prone to loops)
+   // 1. list_products
+   // 2. list_prices  
+   // 3. create_payment_link
+   
+   // NEW: Single atomic operation
+   const result = await getPriceAndCreateLink({
+     product_name: "Space Telescope",
+     quantity: 1
+   });
+   // Returns: "https://buy.stripe.com/test_abc123"
+   ```
+
+3. **Cycle Detection:**
+   The agent now automatically detects and recovers from circular tool usage patterns, providing graceful error messages instead of infinite loops.
+
+4. **Rebuild and restart:**
+   ```bash
+   npm run build
+   npm run web  # or npm run interactive
+   ```
+
 ## 🚀 Quick Start (5 minutes)
 
 ### Prerequisites
@@ -58,12 +103,18 @@
 
 3. **Choose your experience:**
 
-   **Option A - Interactive Customer Service (Recommended):**
+   **Option A - Web Interface (Recommended):**
+   ```bash
+   npm run web
+   ```
+   Then visit `http://localhost:3000` for the space-themed chat interface!
+   
+   **Option B - Interactive CLI:**
    ```bash
    npm run interactive
    ```
    
-   **Option B - Demo with Sample Scenarios:**
+   **Option C - Demo with Sample Scenarios:**
    ```bash
    npm run dev
    ```
@@ -72,9 +123,27 @@
 
 ## 💬 How to Use
 
-### 🤖 Interactive Customer Service Mode
+### 🌐 Web Interface (Recommended)
 
-The interactive mode provides a real-time chat experience with Galileo's Gizmos customer service agent:
+The web interface provides a beautiful space-themed chat experience:
+
+```bash
+npm run web
+# Visit http://localhost:3000
+```
+
+**Features:**
+- 🚀 **Space-themed UI**: Immersive cosmic design with animations
+- 💬 **Real-time Chat**: Beautiful chat interface with message formatting
+- 🛠️ **Quick Tools**: Sidebar buttons for common operations
+- ✨ **Examples**: Click-to-use example requests
+- 📊 **Live Monitoring**: Every interaction logged to Galileo
+- 🔄 **Session Management**: Persistent conversation context
+- 🛸 **Gizmo Assistant**: Space-themed AI personality
+
+### 🤖 Interactive CLI Mode
+
+The CLI mode provides a real-time terminal chat experience:
 
 ```bash
 npm run interactive
@@ -269,6 +338,58 @@ The agent handles these Stripe operations automatically:
 - 🔄 **Subscriptions** - Manage recurring billing and subscriptions
 - 📄 **Invoicing** - Create and send invoices to customers
 
+### 🛡️ Reliability Features
+
+#### Anti-Loop Protection
+
+The agent includes an atomic helper tool `get_price_and_create_payment_link` that prevents LLM loops by combining multiple Stripe operations into a single, efficient call:
+
+```typescript
+// Helper tool contract
+type HelperToolInput = {
+  product_name: string;  // Exact product name to search for
+  quantity: number;      // Number of items to purchase
+};
+
+type HelperToolOutput = string; // Direct payment link URL
+
+// Example usage:
+const paymentUrl = await get_price_and_create_payment_link({
+  product_name: "Space Telescope",
+  quantity: 1
+});
+// Returns: "https://buy.stripe.com/test_abc123"
+```
+
+**What it does atomically:**
+1. Searches products by name using `stripe.products.list()`
+2. Finds the active price for the product using `stripe.prices.list()`
+3. Creates a payment link using `stripe.paymentLinks.create()`
+4. Returns the ready-to-share URL
+
+#### Cycle Detection Guard
+
+The agent monitors tool usage patterns and automatically detects circular invocations:
+
+```typescript
+// Detects patterns like:
+// list_products → list_prices → list_products → list_prices
+// and throws CircularToolError with graceful recovery
+
+class CircularToolError extends Error {
+  constructor(message: string, public readonly toolPattern: string[]) {
+    super(message);
+    this.name = 'CircularToolError';
+  }
+}
+```
+
+**Protection features:**
+- Monitors the last 4 tool calls for repeating patterns
+- Gracefully recovers with helpful error messages
+- Logs cycle detection events to Galileo for monitoring
+- Prevents infinite loops that could consume API quotas
+
 ### Integration in Your App
 
 ```typescript
@@ -381,27 +502,114 @@ await logger.completeWorkflow({
 });
 ```
 
+## 🧪 Testing
+
+The agent includes a comprehensive test suite that validates reliability features:
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Test Coverage
+
+**Loop Prevention Tests:**
+- ✅ Atomic helper tool prevents multiple API calls
+- ✅ Each Stripe primitive called exactly once
+- ✅ Handles multiple products without duplication
+- ✅ Graceful error handling for missing products
+
+**Cycle Detection Tests:**
+- ✅ Detects circular tool usage patterns
+- ✅ Throws `CircularToolError` with pattern information
+- ✅ Provides graceful recovery messages
+- ✅ Logs cycle events to Galileo
+
+**TypeScript Compilation Tests:**
+- ✅ Clean compilation without errors
+- ✅ Type safety validation
+- ✅ Output file generation verification
+
+**Conversation Flow Tests:**
+- ✅ Maintains conversation history
+- ✅ Session management
+- ✅ Context preservation across interactions
+
+### Example Test Output
+
+```bash
+✅ StripeAgent › creates link without looping › should call each helper/stripe primitive exactly once
+✅ StripeAgent › creates link without looping › should handle multiple products without duplicating calls
+✅ StripeAgent › compiles clean › should run npm run build successfully
+✅ StripeAgent › error handling › should handle product not found gracefully
+✅ StripeAgent › conversation flow › should maintain conversation history
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+```
+
 ## 🏗️ Architecture
 
 ```
 src/
 ├── agents/
-│   └── StripeAgent.ts          # Main agent implementation
+│   └── StripeAgent.ts          # Main agent implementation with cycle detection
 ├── config/
 │   └── environment.ts          # Environment configuration
+├── errors/
+│   └── CircularToolError.ts    # Custom error for cycle detection
 ├── types/
 │   └── index.ts               # TypeScript type definitions
 ├── utils/
 │   └── GalileoLogger.ts       # Galileo integration utilities
+├── tests/
+│   └── agent.spec.ts          # Comprehensive test suite
 └── index.ts                   # Main application entry point
 ```
 
 ### Key Components
 
-- **[`StripeAgent.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/agents/StripeAgent.ts)** - Main agent that processes natural language and calls Stripe APIs
+- **[`StripeAgent.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/agents/StripeAgent.ts)** - Main agent with cycle detection and atomic helper tool
+- **[`CircularToolError.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/errors/CircularToolError.ts)** - Custom error class for handling circular tool usage
 - **[`GalileoLogger.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/utils/GalileoLogger.ts)** - Handles all monitoring and logging to Galileo
 - **[`environment.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/config/environment.ts)** - Configuration management for API keys and settings
 - **[`types/index.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/types/index.ts)** - TypeScript type definitions for type safety
+- **[`agent.spec.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/tests/agent.spec.ts)** - Comprehensive test suite for reliability features
+
+## 🗺️ Application Flow Diagram
+
+Below is a simplified architecture diagram showing the main flow of your app. **Galileo** is highlighted as the monitoring and analytics layer, capturing every action, error, and user satisfaction event for observability and reliability:
+
+```mermaid
+flowchart TD
+  A["User (Web/CLI)"]
+  B["StripeAgent"]
+  C["StripeAgentToolkit"]
+  D["Stripe API"]
+  E["GalileoAgentLogger"]
+  F["Galileo Platform (Monitoring & Analytics)"]
+
+  A -- "Sends request (e.g. 'Create payment link')" --> B
+  B -- "Understands & orchestrates" --> C
+  C -- "Calls Stripe API" --> D
+  D -- "Returns Stripe result" --> C
+  C -- "Result (e.g. payment link)" --> B
+  B -- "Responds to user" --> A
+
+  B -- "Logs actions, errors, metrics" --> E
+  E -- "Sends traces, logs, satisfaction" --> F
+
+  classDef galileo fill:#ffe4b5,stroke:#333,stroke-width:2px;
+  class E,F galileo;
+```
 
 ## ⚙️ Configuration
 
@@ -487,6 +695,59 @@ const llm = new ChatOpenAI({
 2. Verify all API keys are set correctly in `.env`
 3. See [SETUP.md](file:///Users/erinmikail/GitHub-Local/stripe-agents/SETUP.md) for detailed setup instructions
 4. Check [Stripe Agent documentation](https://github.com/stripe/agent-toolkit) 
+
+## 🛠️ Development Status & Key Components
+
+### Current Status
+The Galileo integration is functioning correctly with proper separation of user input and AI output in logs. All components are working together for accurate monitoring and logging.
+
+### Key Files & Their Purpose
+
+#### Core Application Files
+- **[`src/utils/GalileoLogger.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/utils/GalileoLogger.ts)** - Core Galileo logging implementation
+  - `logAgentExecution` - Logs user input and agent output separately
+  - `addLlmSpan` - Tracks AI model interactions with distinct inputs/outputs
+  - `addToolSpan` - Logs Stripe API operations with detailed request/response data
+  - `startTrace`, `conclude`, `flush` - Session management methods
+
+- **[`src/agents/StripeAgent.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/agents/StripeAgent.ts)** - Main agent orchestration
+  - `processMessage` - Handles user requests and coordinates Stripe operations
+  - `logAgentExecution` - Integration point with GalileoLogger
+  - `startGalileoSession`, `logConversationToGalileo`, `concludeGalileoSession` - Session lifecycle
+
+- **[`src/server.ts`](file:///Users/erinmikail/GitHub-Local/stripe-agents/src/server.ts)** - Web server backend
+  - `/api/chat` endpoint - Manages web sessions and agent processing
+  - Session management - Creates isolated StripeAgent instances per session
+  - Shutdown handler - Ensures proper Galileo session conclusion
+
+#### Testing & Verification
+- **`test-galileo-fixed.js`** - Galileo integration test script
+  - Verifies input/output separation in logs
+  - Tests session creation and conclusion
+  - Confirms proper trace logging to Galileo dashboard
+
+### Essential Commands
+
+#### Running the Application
+- **`npm run web`** - Start web interface at http://localhost:3000
+- **`npm run interactive`** - Start CLI interface for terminal interaction
+- **`npm run dev`** - Run demo with sample scenarios
+
+#### Testing & Verification
+- **`node test-galileo-fixed.js`** - Test Galileo logging functionality
+- **`npm run build`** - Build for production deployment
+- **`npm run start`** - Start production server
+
+### Verification Steps
+1. **Check Galileo Dashboard** - Verify traces show distinct user inputs and agent outputs
+2. **Test Web Interface** - Ensure sessionId handling and UI updates work correctly
+3. **Test CLI Interface** - Confirm real-time logging and conversation context
+4. **Monitor Logs** - Verify proper separation of input/output in Galileo traces
+
+### Next Steps for Enhancement
+- **Granular Logging** - Add more detailed Stripe API request/response logging in `addToolSpan` method
+- **Frontend Integration** - Ensure `callAgent` method properly handles sessionId and connection status
+- **Error Tracking** - Enhanced error context logging for better debugging
 
 ## 📚 Learn More
 

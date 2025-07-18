@@ -3,10 +3,7 @@ import { GalileoAgentLogger } from './utils/GalileoLogger';
 import { env } from './config/environment';
 
 async function main() {
-  console.log('🚀 Starting Stripe Agent with Galileo Integration...');
-  console.log(`📊 Project: ${env.galileo.projectName}`);
-  console.log(`📈 Log Stream: ${env.galileo.logStream}`);
-  console.log('---');
+  console.log('🚀 Stripe Agent Demo');
 
   try {
     // Initialize the agent
@@ -14,81 +11,56 @@ async function main() {
     await agent.init(); // Ensure agent is fully initialized
     const galileoLogger = new GalileoAgentLogger();
 
-    // Start a session for all example interactions
-    const sessionId = await galileoLogger.startSession('Stripe Agent Demo Session');
-    console.log(`📊 Started Galileo session: ${sessionId}`);
-
-    // Example interactions for Galileo's Gizmos - Space-themed store
+    // Example interactions
     const examples = [
       {
-        description: "Create a payment link for a space gadget",
-        message: "Hi! I'd like to create a payment link for our new 'Quantum Telescope Kit' - it's our premium stargazing package for $299.99 USD. Thanks!"
+        description: "Create a payment link for a digital product",
+        message: "Create a payment link for a digital course called 'TypeScript Mastery' priced at $99 USD"
       },
       {
-        description: "Create a customer record for an astronaut", 
-        message: "Please add a new customer to our system: Commander Sally Nebula, email sally.nebula@spacecorp.com"
+        description: "Create a customer record",
+        message: "Create a new customer with email john.doe@example.com and name John Doe"
       },
       {
-        description: "List our space-themed products",
-        message: "Can you show me what cool space products we have available in Galileo's Gizmos?"
+        description: "List existing products",
+        message: "Show me all the products in my Stripe account"
       },
       {
-        description: "Create a monthly space subscription box",
-        message: "I want to set up our 'Cosmic Explorer Monthly Box' subscription service for $42.99 per month - it includes space snacks, astronaut gear, and stellar surprises!"
+        description: "Create a subscription product",
+        message: "Create a monthly subscription product called 'Premium Plan' for $29.99 USD"
       }
     ];
 
     console.log('🤖 Running example interactions...\n');
 
-    // Process each example as a separate trace within the session
     for (let i = 0; i < examples.length; i++) {
       const example = examples[i];
-      console.log(`\n📝 Example ${i + 1}: ${example.description}`);
-      console.log(`💬 User: ${example.message}`);
-      
+      console.log(`\n📝 ${example.description}`);
+      console.log(`💬 ${example.message}`);
       try {
         const response = await agent.processMessage(example.message);
         
         if (response.success) {
-          console.log(`✅ Agent: ${response.message}`);
+          console.log(`🤖 ${response.message}`);
           if (response.data) {
-            console.log(`⏱️  Execution time: ${response.data.executionTime}ms`);
-            console.log(`🔧 Tools used: ${response.data.toolsUsed.join(', ') || 'None'}`);
+            console.log(`⏱️  Time: ${response.data.executionTime}ms | 🔧 Tools: ${response.data.toolsUsed.join(', ') || 'None'}`);
           }
         } else {
           console.log(`❌ Agent Error: ${response.message}`);
           if (response.error) {
-            console.log(`🐛 Technical Error: ${response.error}`);
+            console.log(`🐛 ${response.error}`);
           }
         }
       } catch (error) {
-        console.error(`💥 Unexpected error in example ${i + 1}:`, error);
+        console.error(`💥 Unexpected error:`, error);
       }
-      
       // Add a small delay between examples
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    // Log conversation summary to Galileo
-    console.log('\n📊 Logging conversation to Galileo...');
-    const conversationHistory = agent.getConversationHistory();
-    await galileoLogger.logConversation(conversationHistory);
-
-    // Conclude the session and flush all traces
-    await galileoLogger.concludeSession();
-
-    console.log('\n✨ Agent completed successfully!');
-    console.log('\n📋 Next Steps:');
-    console.log('1. Set up your actual Stripe API keys in .env');
-    console.log('2. Further customize the agent for your specific use case');
-    console.log('4. Add additional evaluation metrics in Galileo');
-    console.log('5. See what more you can do with Galileo');
-
-    console.log('🏗️🔨👷‍♀️Happy building!');
-
+    // Optionally, you can log conversation history to Galileo or generate reports here if needed.
   } catch (error) {
-    console.error('💥 Fatal error:', error);
-    process.exit(1);
+    console.error('💥 Unexpected error in main:', error);
   }
 }
 
