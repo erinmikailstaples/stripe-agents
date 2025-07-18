@@ -1,4 +1,4 @@
-const { StripeAgent } = require('./dist/agents/StripeAgent');
+const { StripeAgent } = require('../dist/agents/StripeAgent');
 
 async function testSessionContinuity() {
   const agent = new StripeAgent();

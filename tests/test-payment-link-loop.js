@@ -1,4 +1,4 @@
-const { StripeAgent } = require('./dist/agents/StripeAgent');
+const { StripeAgent } = require('../dist/agents/StripeAgent');
 
 async function testPaymentLinkLoop() {
   console.log('🧪 Testing payment link loop issue...\n');
